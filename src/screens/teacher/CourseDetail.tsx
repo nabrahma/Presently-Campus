@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Archive, ArchiveRestore, ChevronLeft, ChevronRight, Pencil, Play, QrCode as QrIcon, Radio, Users } from 'lucide-react'
+import { Archive, ArchiveRestore, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Pencil, Play, QrCode as QrIcon, Radio, Rows3, Users } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { CourseForm } from '../../components/CourseForm'
 import { Empty } from '../../components/Empty'
 import { LoadError } from '../../components/LoadError'
 import { MarginNote, MarginPanel, Percent } from '../../components/Margin'
-import { Panel, Readout, SectionHead } from '../../components/Panel'
+import { ActionRow, Panel, Readout, SectionHead } from '../../components/Panel'
 import { QrCode } from '../../components/QrCode'
 import { Sheet } from '../../components/Sheet'
 import { courseLabel } from '../../lib/api'
+import { exportFilename, loadCourseExport, marksCsv, registerCsv } from '../../lib/courseExport'
+import { downloadCsv } from '../../lib/csv'
+import { todayKey } from '../../lib/date'
 import { cn } from '../../lib/cn'
 import { formatSessionTime, formatShortDay } from '../../lib/date'
 import { atRisk, scoreRoster, sortRoster, type RosterSort, type ScoredStudent } from '../../lib/roster'
@@ -40,6 +43,7 @@ export function TeacherCourseDetail() {
   const [editing, setEditing] = useState(false)
   const [selected, setSelected] = useState<ScoredStudent | null>(null)
   const [starting, setStarting] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const sharing = search.get('share') === '1'
 
   const target = data?.course.targetPercentage ?? 75
@@ -106,6 +110,14 @@ export function TeacherCourseDetail() {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={() => setExporting(true)}
+            aria-label="Export attendance"
+            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink-muted active:opacity-60"
+          >
+            <Download size={15} strokeWidth={2} />
+          </button>
           <button
             type="button"
             onClick={() => setSharing(true)}
@@ -215,6 +227,42 @@ export function TeacherCourseDetail() {
 
       <Sheet open={sharing} onClose={() => setSharing(false)} title={`Join ${courseLabel(course)}`} description="Students scan this with their phone camera, or type the code in the app.">
         <JoinShare course={course} />
+      </Sheet>
+
+      <Sheet
+        open={exporting}
+        onClose={() => setExporting(false)}
+        title="Export attendance"
+        description="Closed sessions only. Excused classes count on neither side, as on the roster."
+      >
+        <ActionRow
+          icon={<FileSpreadsheet size={16} strokeWidth={1.9} />}
+          title="Register"
+          detail="One row per student, a column per class: P, A or E, with totals"
+          onClick={() =>
+            void loadCourseExport(course.id).then(
+              (exported) => {
+                downloadCsv(registerCsv(course, exported, data.roster), exportFilename(course, 'register', todayKey()))
+                setExporting(false)
+              },
+              (failure: Error) => toast.error(failure.message)
+            )
+          }
+        />
+        <ActionRow
+          icon={<Rows3 size={16} strokeWidth={1.9} />}
+          title="Every mark"
+          detail="One row per student per class, with method, time and flags, for analysis"
+          onClick={() =>
+            void loadCourseExport(course.id).then(
+              (exported) => {
+                downloadCsv(marksCsv(exported), exportFilename(course, 'marks', todayKey()))
+                setExporting(false)
+              },
+              (failure: Error) => toast.error(failure.message)
+            )
+          }
+        />
       </Sheet>
 
       <Sheet open={editing} onClose={() => setEditing(false)} title="Edit course">
