@@ -97,17 +97,19 @@ function storeFor(db: SupabaseClient): ScanStore {
       return data ? { status: data.status, markedAt: data.marked_at } : null
     },
 
-    async insertMark({ session, studentId, deviceId }) {
-      const { data, error } = await db
-        .from('attendance')
-        .insert({ session_id: session.id, student_id: studentId, status: 'present', method: 'qr', device_id: deviceId })
-        .select('marked_at')
-        .single()
-      if (error?.code === '23505') {
-        const text = `${error.message} ${error.details ?? ''}`
-        return { ok: false, conflict: /one_mark_per_device/.test(text) ? 'device' : 'student' }
-      }
+    async insertMark({ session, studentId, deviceId, ip, userAgent }) {
+      // The database adds the soft flags (off campus, shared connection,
+      // late) as it writes the mark, and reports which constraint stopped a
+      // racing duplicate.
+      const { data, error } = await db.rpc('record_qr_mark', {
+        p_session: session.id,
+        p_student: studentId,
+        p_device: deviceId,
+        p_ip: ip,
+        p_user_agent: userAgent
+      })
       if (error) fail(error)
+      if (data.status === 'conflict') return { ok: false, conflict: data.conflict === 'device' ? 'device' : 'student' }
       return { ok: true, markedAt: data.marked_at }
     },
 

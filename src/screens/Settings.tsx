@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Check, LogOut, Smartphone } from 'lucide-react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
-import { DataRow, Panel, SectionHead } from '../components/Panel'
+import { ActionRow, DataRow, Panel, SectionHead } from '../components/Panel'
 import { PrivacyNotice } from '../components/PrivacyNotice'
 import { PhonePanel } from '../components/PhonePanel'
 import { ScreenHead } from '../components/Shell'
@@ -169,29 +169,5 @@ export function StudentSettings() {
     <Settings>
       <PhonePanel status={status} />
     </Settings>
-  )
-}
-
-export function ActionRow({
-  icon,
-  title,
-  detail,
-  onClick,
-  destructive = false
-}: {
-  icon: ReactNode
-  title: string
-  detail: string
-  onClick: () => void
-  destructive?: boolean
-}) {
-  return (
-    <DataRow onClick={onClick} className="py-4">
-      <span className={cn('shrink-0', destructive ? 'text-danger' : 'text-ink-muted')}>{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className={cn('block text-[0.85rem]', destructive && 'text-danger')}>{title}</span>
-        <span className="label mt-1.5 block normal-case">{detail}</span>
-      </span>
-    </DataRow>
   )
 }

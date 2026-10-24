@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { clearRemoteCache } from '../lib/remote'
 import { SessionProvider } from '../lib/session'
-import { calls, setFixtures } from './fakeSupabase'
-import { course, STUDENT, teacherWorld } from './fixtures'
+import { calls, emitRealtime, setFixtures } from './fakeSupabase'
+import { course, reportRow, STUDENT, teacherWorld } from './fixtures'
 import { describeAgent } from '../screens/teacher/Approvals'
 
 vi.mock('../lib/supabaseClient', async (importOriginal) => {
@@ -134,6 +134,36 @@ describe('teacher session detail', () => {
   })
 })
 
+describe('flag review', () => {
+  it('explains a flag and removes the mark when the teacher calls it a proxy', async () => {
+    const world = teacherWorld()
+    setFixtures({
+      ...world,
+      rpc: {
+        ...world.rpc,
+        session_report: () => [
+          reportRow('s-a', '21CS10', 'Chen Li', 'present', { flags: ['shared_connection', 'late'] }),
+          reportRow('s-b', '21CS9', 'Bilal Khan', 'absent')
+        ]
+      }
+    })
+    const user = userEvent.setup()
+    mount('/sessions/live')
+
+    expect(await screen.findByText(/flagged · 1/i)).toBeTruthy()
+    expect(screen.getByText(/several students scanned from one connection/i)).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /proxy · mark absent/i }))
+    await waitFor(() =>
+      expect(calls).toContainEqual({
+        kind: 'rpc',
+        name: 'teacher_mark',
+        args: { p_session: 'live', p_student: 's-a', p_status: 'absent', p_reason: 'Reviewed flag: proxy' }
+      })
+    )
+  })
+})
+
 describe('projector', () => {
   it('shows a rotating code and the count of students marked', async () => {
     const world = teacherWorld()
@@ -151,6 +181,31 @@ describe('projector', () => {
     expect(screen.getByRole('timer')).toBeTruthy()
     // Full screen: the dock is not there to distract a projected class.
     expect(screen.queryByRole('navigation')).toBeNull()
+  })
+
+  it('moves the count as marks arrive over Realtime', async () => {
+    const world = teacherWorld()
+    let present = ['s-a']
+    setFixtures({
+      ...world,
+      rpc: {
+        ...world.rpc,
+        live_session_key: () => ({ secret: btoa(String.fromCharCode(...new Array(32).fill(7))), server_time: Date.now() }),
+        session_report: () =>
+          [
+            ['s-a', '21CS10', 'Chen Li'],
+            ['s-b', '21CS9', 'Bilal Khan'],
+            ['s-c', '21CS2', 'Asha Rao']
+          ].map(([id, roll, name]) => reportRow(id, roll, name, present.includes(id) ? 'present' : 'absent'))
+      }
+    })
+    mount('/live/live')
+    await screen.findByText(/of 3 marked/i)
+    expect(screen.getByText('1')).toBeTruthy()
+
+    present = ['s-a', 's-b']
+    emitRealtime('attendance')
+    expect(await screen.findByText('2')).toBeTruthy()
   })
 
   it('says so when the session has already closed', async () => {
@@ -239,5 +294,45 @@ describe('describeAgent', () => {
     expect(describeAgent('Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36')).toBe('Android · Chrome')
     expect(describeAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36 Edg/130.0')).toBe('Windows · Edge')
     expect(describeAgent(null)).toBe('Unknown device')
+  })
+})
+
+describe('analysis', () => {
+  it('lists who will not make the target by the cutoff, and charts each class', async () => {
+    const world = teacherWorld()
+    const weeksAgo = (weeks: number, hour: number) => {
+      const date = new Date(Date.now() - weeks * 7 * 86_400_000)
+      date.setHours(hour, 0, 0, 0)
+      return date.toISOString()
+    }
+    setFixtures({
+      ...world,
+      rpc: {
+        ...world.rpc,
+        flag_outcomes: () => [{ flag: 'shared_connection', kept: 1, removed: 2, pending: 0 }],
+        course_sessions_summary: () =>
+          [1, 2, 3].map((weeks) => ({
+            session_id: `w${weeks}`,
+            started_at: weeksAgo(weeks, 10),
+            closed_at: weeksAgo(weeks, 11),
+            status: 'closed',
+            note: null,
+            expected: 3,
+            present: 2,
+            excused: 0,
+            flagged: 0
+          }))
+      }
+    })
+    mount('/courses/course-1/analysis')
+
+    // Bilal, 6 of 10, is below; Asha, 7 of 10, too; Chen, 9 of 10, is fine.
+    expect(await screen.findByText(/needs attention by .* · 2/i)).toBeTruthy()
+    expect(screen.getByText('Bilal Khan')).toBeTruthy()
+    expect(screen.queryByText('Chen Li')).toBeNull()
+
+    // The heatmap's one cell: Mondays or whichever weekday, at 10:00, a third absent.
+    expect(screen.getByRole('button', { name: /10:00 · 3 classes · 33% absent \(3 of 9\)/ })).toBeTruthy()
+    expect(screen.getByText('Proxies removed')).toBeTruthy()
   })
 })

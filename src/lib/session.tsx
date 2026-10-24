@@ -121,7 +121,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     })()
 
     const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
-      void adopt(session?.user.id ?? null, session?.user.email ?? null)
+      // The client holds its auth lock while this runs, and loading the
+      // profile needs that lock, so the work waits for the callback to return.
+      window.setTimeout(() => void adopt(session?.user.id ?? null, session?.user.email ?? null), 0)
     })
 
     return () => {

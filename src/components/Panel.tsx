@@ -87,3 +87,28 @@ export function SectionHead({ label, action }: { label: string; action?: ReactNo
     </div>
   )
 }
+
+/** A tappable row with an icon, a title and a line of detail, as in Settings. */
+export function ActionRow({
+  icon,
+  title,
+  detail,
+  onClick,
+  destructive = false
+}: {
+  icon: ReactNode
+  title: string
+  detail: string
+  onClick: () => void
+  destructive?: boolean
+}) {
+  return (
+    <DataRow onClick={onClick} className="py-4">
+      <span className={cn('shrink-0', destructive ? 'text-danger' : 'text-ink-muted')}>{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className={cn('block text-[0.85rem]', destructive && 'text-danger')}>{title}</span>
+        <span className="label mt-1.5 block normal-case">{detail}</span>
+      </span>
+    </DataRow>
+  )
+}

@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { run, toCourse, toFigures, toMark, toSession, type Row } from './api'
 import { invalidate, useRemote } from './remote'
 import { useUserId } from './session'
+import { supabase } from './supabaseClient'
 import type { AttendanceMark, ClassSession, Course, Figures, SessionStatus } from '../types'
 
 /* -------------------------------------------------------------------------- */
@@ -218,6 +220,42 @@ export function useSessionDetail(sessionId: string | undefined) {
 /** Fetches a session's report again, for the live count and after marks. */
 export const refreshSession = (userId: string, sessionId: string) => invalidate(sessionKey(userId, sessionId))
 
+/** A burst of scans arrives as a burst of events; one fetch answers them all. */
+const LIVE_COALESCE_MS = 400
+
+/**
+ * Refetches a session's report as marks arrive, so the projector's count
+ * moves as students scan. Realtime only delivers rows the teacher may read.
+ * The screens keep a slow poll as well, for a connection that drops events.
+ */
+export function useLiveMarks(sessionId: string | undefined, enabled: boolean) {
+  const userId = useUserId()
+
+  useEffect(() => {
+    const client = supabase
+    if (!client || !sessionId || !enabled) return
+
+    let timer: number | null = null
+    const schedule = () => {
+      if (timer !== null) return
+      timer = window.setTimeout(() => {
+        timer = null
+        void refreshSession(userId, sessionId)
+      }, LIVE_COALESCE_MS)
+    }
+
+    const channel = client
+      .channel(`session-marks:${sessionId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: `session_id=eq.${sessionId}` }, schedule)
+      .subscribe()
+
+    return () => {
+      if (timer !== null) window.clearTimeout(timer)
+      void client.removeChannel(channel)
+    }
+  }, [enabled, sessionId, userId])
+}
+
 /* -------------------------------------------------------------------------- */
 /* Writes                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -372,4 +410,28 @@ export function usePhoneRequests() {
 export async function decidePhone(userId: string, deviceId: string, approve: boolean): Promise<void> {
   await run((db) => db.rpc(approve ? 'approve_device' : 'reject_device', { p_device: deviceId }))
   await refreshAll(userId)
+}
+
+/* -------------------------------------------------------------------------- */
+/* Flag outcomes                                                               */
+/* -------------------------------------------------------------------------- */
+
+export interface FlagOutcome {
+  flag: string
+  kept: number
+  removed: number
+  pending: number
+}
+
+export function useFlagOutcomes(courseId: string | undefined) {
+  const userId = useUserId()
+  return useRemote(courseId ? `${teacherPrefix(userId)}:flags:${courseId}` : null, async () => {
+    const rows = (await run((db) => db.rpc('flag_outcomes', { p_course: courseId }))) as Row[]
+    return rows.map((row) => ({
+      flag: String(row.flag),
+      kept: number(row.kept),
+      removed: number(row.removed),
+      pending: number(row.pending)
+    }))
+  })
 }
