@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Archive, ArchiveRestore, ChevronLeft, ChevronRight, Download, FileSpreadsheet, LineChart, Pencil, Play, QrCode as QrIcon, Radio, Rows3, Users } from 'lucide-react'
+import { Archive, ArchiveRestore, BookOpen, CalendarCheck, ChevronRight, Download, FileSpreadsheet, Gauge, LineChart, Pencil, Play, QrCode as QrIcon, Radio, Rows3, TriangleAlert, Users } from 'lucide-react'
+import { BackLink } from '../../components/BackLink'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { CourseForm } from '../../components/CourseForm'
 import { Empty } from '../../components/Empty'
 import { LoadError } from '../../components/LoadError'
 import { MarginNote, MarginPanel, Percent } from '../../components/Margin'
-import { ActionRow, Panel, Readout, SectionHead } from '../../components/Panel'
+import { ActionRow, Panel, SectionHead } from '../../components/Panel'
 import { QrCode } from '../../components/QrCode'
 import { Sheet } from '../../components/Sheet'
+import { ScreenHead } from '../../components/Shell'
+import { StatCard } from '../../components/StatCard'
 import { courseLabel } from '../../lib/api'
 import { exportFilename, loadCourseExport, marksCsv, registerCsv } from '../../lib/courseExport'
 import { downloadCsv } from '../../lib/csv'
@@ -89,93 +92,64 @@ export function TeacherCourseDetail() {
 
   return (
     <>
-      <Link
-        to="/"
-        className="mb-5 inline-flex items-center gap-1.5 font-mono text-[0.65rem] tracking-[0.1em] text-ink-muted uppercase active:opacity-60"
-      >
-        <ChevronLeft size={14} strokeWidth={2.2} />
-        Courses
-      </Link>
+      <BackLink to="/" label="Courses" />
 
-      <header className="mb-6 flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="label truncate">
-            {courseLabel(course)}
-            {course.term ? ` · ${course.term}` : ''}
-            {course.archived ? ' · Archived' : ''}
-          </p>
-          <h1 className="mt-2.5 text-[1.4rem] leading-tight tracking-[-0.01em]">{course.name}</h1>
-          <p className="mt-2 font-mono text-[0.6rem] tracking-[0.08em] text-ink-faint uppercase">
-            Target {course.targetPercentage}% · join code {course.joinCode}
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <button
-            type="button"
-            onClick={() => setExporting(true)}
-            aria-label="Export attendance"
-            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink-muted active:opacity-60"
-          >
-            <Download size={15} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSharing(true)}
-            aria-label="Show the join code"
-            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink-muted active:opacity-60"
-          >
-            <QrIcon size={15} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            aria-label={`Edit ${course.name}`}
-            className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink-muted active:opacity-60"
-          >
-            <Pencil size={15} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
+      <ScreenHead
+        icon={<BookOpen size={26} strokeWidth={2} />}
+        title={course.name}
+        label={`${courseLabel(course)}${course.term ? ` · ${course.term}` : ''}${course.archived ? ' · Archived' : ''} · target ${course.targetPercentage}% · join code ${course.joinCode}`}
+      />
 
-      <div className="mb-6 flex flex-wrap gap-3">
+      {/* The one thing a teacher opens this for at the start of class comes
+          first and largest; everything else is a labelled button beside it. */}
+      <div className="mb-6 flex flex-wrap gap-2.5">
         {open ? (
-          <Link to={projectorPath(open.sessionId)} className="btn-primary flex-1 md:flex-none">
-            <Radio size={15} strokeWidth={2.2} /> Open live session · {open.present}/{open.expected - open.excused}
+          <Link to={projectorPath(open.sessionId)} className="btn-accent w-full sm:w-auto">
+            <Radio size={20} strokeWidth={2.2} /> Open live session · {open.present}/{open.expected - open.excused}
           </Link>
         ) : course.archived ? null : (
-          <button type="button" className="btn-primary flex-1 md:flex-none" disabled={starting} onClick={() => void start()}>
-            <Play size={14} strokeWidth={2.4} /> {starting ? 'Starting' : 'Start session'}
+          <button type="button" className="btn-accent w-full sm:w-auto sm:min-w-[14rem]" disabled={starting} onClick={() => void start()}>
+            <Play size={20} strokeWidth={2.4} /> {starting ? 'Starting…' : 'Start session'}
           </button>
         )}
-        <Link to={`/courses/${course.id}/analysis`} className="btn-secondary flex-1 md:flex-none">
-          <LineChart size={14} strokeWidth={2.2} /> Analysis
-        </Link>
+        <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:flex-wrap">
+          <Link to={`/courses/${course.id}/analysis`} className="btn-secondary">
+            <LineChart size={19} strokeWidth={2.2} /> Analysis
+          </Link>
+          <button type="button" onClick={() => setExporting(true)} aria-label="Export attendance" className="btn-secondary">
+            <Download size={19} strokeWidth={2.2} /> Export
+          </button>
+          <button type="button" onClick={() => setSharing(true)} aria-label="Show the join code" className="btn-secondary">
+            <QrIcon size={19} strokeWidth={2.2} /> Join code
+          </button>
+          <button type="button" onClick={() => setEditing(true)} aria-label={`Edit ${course.name}`} className="btn-secondary">
+            <Pencil size={19} strokeWidth={2.2} /> Edit
+          </button>
+        </div>
       </div>
 
-      <div className="mb-7 grid grid-cols-4 gap-3">
-        <Panel className="px-4 py-3.5">
-          <Readout label="Students" value={String(active.length)} size="sm" />
-        </Panel>
-        <Panel className="px-4 py-3.5">
-          <Readout label="Held" value={String(held)} size="sm" />
-        </Panel>
-        <Panel className="px-4 py-3.5">
-          <Readout label="Average" value={average === null ? '––' : String(average)} suffix="%" size="sm" />
-        </Panel>
-        <Panel className="px-4 py-3.5">
-          <Readout label="At risk" value={String(risk.length)} size="sm" tone={risk.length > 0 ? 'danger' : 'default'} />
-        </Panel>
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        <StatCard icon={Users} label="Students" value={String(active.length)} />
+        <StatCard icon={CalendarCheck} label="Held" value={String(held)} suffix={held === 1 ? 'class' : 'classes'} />
+        <StatCard icon={Gauge} label="Average" value={average === null ? '––' : String(average)} suffix="%" />
+        <StatCard
+          icon={TriangleAlert}
+          label="At risk"
+          value={String(risk.length)}
+          tone={risk.length > 0 ? 'danger' : 'default'}
+          suffix={risk.length === 1 ? 'student' : 'students'}
+        />
       </div>
 
-      <div className="lg:flex lg:items-start lg:gap-8">
-        <div className="min-w-0 lg:flex-1">
+      <div className="lg:flex lg:items-start lg:gap-5">
+        <Panel className="min-w-0 px-4 pt-4 pb-2 md:px-6 lg:flex-1">
           <SectionHead
             label={`Roster · ${active.length}`}
             action={<SortControl value={sort} onChange={setSort} />}
           />
 
           {active.length === 0 ? (
-            <div className="mt-4">
+            <div className="pb-3">
               <Empty
                 icon={<Users size={18} strokeWidth={1.8} />}
                 title="No students yet"
@@ -196,15 +170,15 @@ export function TeacherCourseDetail() {
           )}
 
           {removed.length > 0 ? (
-            <div className="mt-7">
+            <div className="mt-6">
               <SectionHead label={`Removed · ${removed.length}`} />
               {removed.map((student) => (
-                <div key={student.row.studentId} className="flex items-center gap-3 border-b border-line py-3 last:border-b-0">
-                  <span className="w-[5.5rem] shrink-0 font-mono text-[0.72rem] text-ink-faint">{student.row.rollNumber}</span>
-                  <span className="min-w-0 flex-1 truncate text-[0.85rem] text-ink-muted">{student.row.fullName}</span>
+                <div key={student.row.studentId} className="flex min-h-16 items-center gap-3 border-b border-line py-3 last:border-b-0">
+                  <span className="w-[6.5rem] shrink-0 font-mono text-[0.95rem] text-ink-muted">{student.row.rollNumber}</span>
+                  <span className="min-w-0 flex-1 truncate text-[1.0625rem] text-ink-muted">{student.row.fullName}</span>
                   <button
                     type="button"
-                    className="font-mono text-[0.62rem] tracking-[0.1em] text-accent uppercase active:opacity-60"
+                    className="chip min-h-11 bg-elevated px-4 text-ink hover:bg-line"
                     onClick={() =>
                       void setEnrolment(userId, course.id, student.row.studentId, 'active').then(
                         () => toast.success(`${student.row.fullName} restored`),
@@ -218,16 +192,16 @@ export function TeacherCourseDetail() {
               ))}
             </div>
           ) : null}
-        </div>
+        </Panel>
 
-        <div className="mt-7 min-w-0 lg:mt-0 lg:w-[22rem] lg:shrink-0">
+        <Panel className="mt-5 min-w-0 px-4 pt-4 pb-2 md:px-6 lg:mt-0 lg:w-[24rem] lg:shrink-0">
           <SectionHead label={`Sessions · ${sessions.length}`} />
           {sessions.length === 0 ? (
-            <p className="py-4 text-[0.8rem] text-ink-muted">No sessions yet. Start one when the class begins.</p>
+            <p className="pb-4 text-[1rem] text-ink-muted">No sessions yet. Start one when the class begins.</p>
           ) : (
             sessions.map((session) => <SessionLine key={session.sessionId} session={session} />)
           )}
-        </div>
+        </Panel>
       </div>
 
       <Sheet open={sharing} onClose={() => setSharing(false)} title={`Join ${courseLabel(course)}`} description="Students scan this with their phone camera, or type the code in the app.">
@@ -241,7 +215,7 @@ export function TeacherCourseDetail() {
         description="Closed sessions only. Excused classes count on neither side, as on the roster."
       >
         <ActionRow
-          icon={<FileSpreadsheet size={16} strokeWidth={1.9} />}
+          icon={<FileSpreadsheet size={20} strokeWidth={1.9} />}
           title="Register"
           detail="One row per student, a column per class: P, A or E, with totals"
           onClick={() =>
@@ -255,7 +229,7 @@ export function TeacherCourseDetail() {
           }
         />
         <ActionRow
-          icon={<Rows3 size={16} strokeWidth={1.9} />}
+          icon={<Rows3 size={20} strokeWidth={1.9} />}
           title="Every mark"
           detail="One row per student per class, with method, time and flags, for analysis"
           onClick={() =>
@@ -293,15 +267,15 @@ export function TeacherCourseDetail() {
           >
             {course.archived ? (
               <>
-                <ArchiveRestore size={14} /> Restore
+                <ArchiveRestore size={19} /> Restore
               </>
             ) : (
               <>
-                <Archive size={14} /> Archive
+                <Archive size={19} /> Archive
               </>
             )}
           </button>
-          <p className="text-[0.72rem] leading-relaxed text-ink-faint">
+          <p className="text-[0.975rem] leading-relaxed text-ink-muted">
             Archiving keeps every record but stops new students joining and new sessions starting.
           </p>
         </div>
@@ -323,7 +297,7 @@ export function TeacherCourseDetail() {
 
 function SortControl({ value, onChange }: { value: RosterSort; onChange: (value: RosterSort) => void }) {
   return (
-    <div role="radiogroup" aria-label="Sort roster" className="flex gap-3">
+    <div role="radiogroup" aria-label="Sort roster" className="inset flex gap-1 rounded-full p-1">
       {(
         [
           ['roll', 'Roll'],
@@ -338,8 +312,8 @@ function SortControl({ value, onChange }: { value: RosterSort; onChange: (value:
           aria-checked={value === key}
           onClick={() => onChange(key)}
           className={cn(
-            'font-mono text-[0.62rem] tracking-[0.1em] uppercase transition-colors',
-            value === key ? 'text-accent' : 'text-ink-faint'
+            'min-h-10 min-w-11 rounded-full px-3.5 text-[0.95rem] font-semibold transition-colors',
+            value === key ? 'bg-surface text-ink shadow-(--shadow-card)' : 'text-ink-muted hover:text-ink'
           )}
         >
           {label}
@@ -365,21 +339,24 @@ function RosterLine({ student, target, onOpen }: { student: ScoredStudent; targe
       role="listitem"
       onClick={onOpen}
       className={cn(
-        'hover-row flex w-full items-center gap-3 border-b border-line py-3 text-left last:border-b-0 active:opacity-60 md:px-2',
-        zone === 'danger' && 'bg-danger-wash'
+        'hover-row -mx-2 flex min-h-16 w-[calc(100%+1rem)] items-center gap-3 rounded-xl border-b border-line px-2 py-3 text-left last:border-b-0 active:opacity-70',
+        zone === 'danger' && 'bg-danger-wash/70'
       )}
     >
       {/* Colour is never the only signal: the margin note says it in words. */}
-      <span aria-hidden className={cn('h-8 w-[2px] shrink-0 rounded-full', ZONE_EDGE[zone])} />
-      <span className="w-[5.5rem] shrink-0 font-mono text-[0.72rem] text-ink-muted tabular-nums">{row.rollNumber}</span>
+      <span aria-hidden className={cn('h-10 w-1 shrink-0 rounded-full', ZONE_EDGE[zone])} />
+      <span className="hidden w-[6.5rem] shrink-0 font-mono text-[0.95rem] text-ink-muted tabular-nums sm:block">
+        {row.rollNumber}
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.85rem] text-ink">{row.fullName}</span>
-        <span className="mt-1 block truncate font-mono text-[0.6rem] tracking-[0.06em] text-ink-faint tabular-nums">
-          {stats.total === 0 ? 'Nothing counted yet' : `${stats.present}/${stats.total}`}
+        <span className="block truncate text-[1.0625rem] font-semibold">{row.fullName}</span>
+        <span className="mt-0.5 block truncate text-[0.95rem] text-ink-muted tabular-nums">
+          <span className="font-mono sm:hidden">{row.rollNumber} · </span>
+          {stats.total === 0 ? 'Nothing counted yet' : `${stats.present} of ${stats.total}`}
           <MarginNote stats={stats} />
         </span>
       </span>
-      <Percent stats={stats} target={target} className="text-[1rem]" />
+      <Percent stats={stats} target={target} className="text-[1.375rem]" />
     </button>
   )
 }
@@ -393,27 +370,35 @@ const STATUS_LABEL: Record<SessionSummary['status'], string> = {
 function SessionLine({ session }: { session: SessionSummary }) {
   return (
     <Link to={sessionPath(session.sessionId)} className="block">
-      <div className="hover-row flex items-center gap-3 border-b border-line py-3 last:border-b-0 md:px-2">
+      <div className="hover-row -mx-2 flex min-h-16 items-center gap-3 rounded-xl border-b border-line px-2 py-3 last:border-b-0">
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[0.76rem] text-ink tabular-nums">{formatSessionTime(session.startedAt)}</p>
-          <p
-            className={cn(
-              'mt-1 font-mono text-[0.6rem] tracking-[0.08em] uppercase',
-              session.status === 'open' ? 'text-accent' : 'text-ink-faint'
-            )}
-          >
-            {STATUS_LABEL[session.status]}
-            {session.flagged > 0 ? <span className="text-warn">{` · ${session.flagged} flagged`}</span> : null}
+          <p className="text-[1.0625rem] font-medium tabular-nums">{formatSessionTime(session.startedAt)}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span
+              className={cn(
+                'chip py-1 text-[0.85rem]',
+                session.status === 'open'
+                  ? 'bg-accent-wash text-accent'
+                  : session.status === 'cancelled'
+                    ? 'bg-elevated text-ink-muted line-through'
+                    : 'bg-elevated text-ink-muted'
+              )}
+            >
+              {STATUS_LABEL[session.status]}
+            </span>
+            {session.flagged > 0 ? (
+              <span className="chip bg-warn-wash py-1 text-[0.85rem] text-warn">{`${session.flagged} flagged`}</span>
+            ) : null}
           </p>
         </div>
         {session.status === 'cancelled' ? null : (
-          <span className="readout text-[0.95rem]">
+          <span className="readout text-[1.375rem]">
             {session.present}
             {/* Excused students count on neither side. */}
-            <span className="text-[0.7em] text-ink-faint">/{session.expected - session.excused}</span>
+            <span className="text-[0.65em] text-ink-muted">/{session.expected - session.excused}</span>
           </span>
         )}
-        <ChevronRight size={15} className="shrink-0 text-ink-faint" />
+        <ChevronRight size={20} className="shrink-0 text-ink-faint" />
       </div>
     </Link>
   )
@@ -426,8 +411,8 @@ function JoinShare({ course }: { course: Course }) {
   return (
     <div className="flex flex-col items-center">
       <QrCode value={url} label={`QR code to join ${course.name}`} className="max-w-[18rem]" />
-      <p className="readout mt-6 text-[2.4rem] tracking-[0.25em]">{course.joinCode}</p>
-      <p className="mt-3 text-center text-[0.78rem] leading-relaxed text-ink-muted">
+      <p className="readout mt-6 text-[2.75rem] tracking-[0.25em]">{course.joinCode}</p>
+      <p className="mt-3 text-center text-[1rem] leading-relaxed text-ink-muted">
         Codes have no 0, O, 1, I or L, so they cannot be misread.
       </p>
       <button

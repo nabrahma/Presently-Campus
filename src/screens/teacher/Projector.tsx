@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronLeft, CircleSlash, Maximize, Minimize, Radio } from 'lucide-react'
+import { ChevronLeft, CircleSlash, Maximize, Minimize, Radio, ScanLine } from 'lucide-react'
 import { Booting } from '../../components/Booting'
+import { Logo } from '../../components/Logo'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { QrCode } from '../../components/QrCode'
 import { courseLabel } from '../../lib/api'
@@ -93,49 +94,66 @@ export function Projector() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-bg md:flex-row">
-      <div className="flex min-h-0 flex-1 items-center justify-center p-4 md:p-8">
-        <div className="aspect-square h-auto w-full max-w-[min(82dvh,100%)] md:h-[min(86dvh,62vw)] md:w-auto">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-4 md:p-8">
+        <div className="aspect-square h-full max-h-full w-auto max-w-full md:h-[min(84dvh,60vw)]">
           {token ? (
-            <QrCode value={token} label={`Attendance code for ${course.name}`} className="h-full rounded-[1.75rem] p-4" />
+            <QrCode
+              value={token}
+              label={`Attendance code for ${course.name}`}
+              className="h-full rounded-[2rem] border border-line p-5 shadow-(--shadow-lift)"
+            />
           ) : (
-            <div className="grid h-full place-items-center rounded-[1.75rem] border border-line">
-              <p className="label">Preparing code</p>
+            <div className="dot-grid grid h-full place-items-center rounded-[2rem] border border-line bg-surface">
+              <p className="title text-[1.375rem] text-ink-muted">Preparing code…</p>
             </div>
           )}
         </div>
+        <p className="hidden items-center gap-2.5 text-[1.25rem] font-medium text-ink md:flex">
+          <ScanLine size={24} strokeWidth={2} className="text-accent" />
+          {online ? 'Open Presently Campus and tap Scan' : 'Scanning needs a connection on the phone'}
+        </p>
       </div>
 
-      <aside className="flex shrink-0 flex-col gap-6 border-line px-6 pt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:w-[24rem] md:justify-between md:border-l md:px-8 md:py-8 lg:w-[28rem]">
+      <aside
+        className={cn(
+          'flex shrink-0 flex-col gap-6 px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]',
+          'md:my-4 md:mr-4 md:w-[26rem] md:justify-between md:rounded-[2rem] md:border md:border-line md:bg-surface md:p-8 md:shadow-(--shadow-card) lg:w-[30rem]'
+        )}
+      >
         <div>
-          <p className="label flex items-center gap-2 text-accent">
-            <Radio size={12} strokeWidth={2.4} className="motion-safe:animate-pulse" /> Live · started {formatTime(session.startedAt)}
-          </p>
-          <p className="mt-4 font-mono text-[0.85rem] tracking-[0.06em] text-ink-muted uppercase">{courseLabel(course)}</p>
-          <h1 className="mt-2 text-[1.6rem] leading-tight tracking-[-0.01em] md:text-[2rem]">{course.name}</h1>
-        </div>
-
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <p className="readout text-[4.5rem] leading-none text-accent md:text-[6rem]" aria-live="polite">
-              {groups.present.length}
-            </p>
-            <p className="mt-3 font-mono text-[0.85rem] tracking-[0.04em] text-ink-muted">
-              of {groups.expected} marked
+          <div className="flex items-center gap-3">
+            <Logo className="size-10" />
+            <p className="chip bg-accent-wash text-accent">
+              <Radio size={16} strokeWidth={2.4} className="motion-safe:animate-pulse" /> Live · started {formatTime(session.startedAt)}
             </p>
           </div>
-          <Countdown remaining={remaining} />
+          <h1 className="title mt-5 text-[1.75rem] md:text-[2.25rem]">{course.name}</h1>
+          <p className="mt-1 text-[1.125rem] text-ink-muted">{courseLabel(course)}</p>
+        </div>
+
+        <div className="inset p-5">
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <p className="readout text-[3.5rem] text-ink md:text-[6rem]" aria-live="polite">
+                {groups.present.length}
+              </p>
+              <p className="mt-3 text-[1.125rem] font-medium text-ink-muted">of {groups.expected} marked</p>
+            </div>
+            <Countdown remaining={remaining} />
+          </div>
+          <ScanBar marked={groups.present.length} expected={groups.expected} />
         </div>
 
         {groups.flagged.length > 0 ? (
           <div className="hidden md:block">
-            <p className="label text-warn">Recent flags · {groups.flagged.length}</p>
-            <ul className="mt-3 space-y-1.5">
+            <p className="chip bg-warn-wash text-warn">Recent flags · {groups.flagged.length}</p>
+            <ul className="mt-3 space-y-2">
               {[...groups.flagged]
                 .sort((a, b) => (b.markedAt ?? '').localeCompare(a.markedAt ?? ''))
                 .slice(0, 3)
                 .map((row) => (
-                  <li key={row.studentId} className="flex gap-3 font-mono text-[0.7rem] text-ink-muted">
-                    <span className="w-[5.5rem] shrink-0 tabular-nums">{row.rollNumber}</span>
+                  <li key={row.studentId} className="flex gap-3 text-[1rem] text-ink-muted">
+                    <span className="w-[6.5rem] shrink-0 font-mono tabular-nums">{row.rollNumber}</span>
                     <span className="truncate">{row.flags.map(flagLabel).join(' · ')}</span>
                   </li>
                 ))}
@@ -144,32 +162,25 @@ export function Projector() {
         ) : null}
 
         <div className="space-y-3">
-          <p className={cn('label flex items-center gap-1.5', online ? 'text-ink-faint' : 'text-warn')}>
-            {online ? (
-              'Scan with Presently Campus · Scan tab'
-            ) : (
-              <>
-                <CircleSlash size={11} strokeWidth={2.2} /> Offline · the code still works, the count will catch up
-              </>
-            )}
-          </p>
-          <div className="flex gap-2">
-            <Link
-              to={`/sessions/${session.id}`}
-              aria-label="Session details"
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-line text-ink-muted active:opacity-60"
-            >
-              <ChevronLeft size={17} strokeWidth={2} />
+          {online ? null : (
+            <p className="chip bg-warn-wash text-warn">
+              <CircleSlash size={15} strokeWidth={2.2} /> Offline · the code still works, the count will catch up
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2.5">
+            <Link to={`/sessions/${session.id}`} aria-label="Session details" className="btn-secondary">
+              <ChevronLeft size={19} strokeWidth={2.2} /> Details
             </Link>
             <button
               type="button"
               onClick={toggleFullscreen}
               aria-label={fullscreen ? 'Leave full screen' : 'Full screen'}
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-line text-ink-muted active:opacity-60"
+              className="btn-secondary"
             >
-              {fullscreen ? <Minimize size={16} strokeWidth={2} /> : <Maximize size={16} strokeWidth={2} />}
+              {fullscreen ? <Minimize size={18} strokeWidth={2.2} /> : <Maximize size={18} strokeWidth={2.2} />}
+              {fullscreen ? 'Exit full' : 'Full screen'}
             </button>
-            <button type="button" className="btn-secondary h-12 flex-1" onClick={() => setConfirmClose(true)}>
+            <button type="button" className="btn-primary col-span-2" onClick={() => setConfirmClose(true)}>
               Close session
             </button>
           </div>
@@ -197,10 +208,23 @@ export function Projector() {
   )
 }
 
+/** Who has scanned, as a row of ticks filled in proportion. */
+function ScanBar({ marked, expected }: { marked: number; expected: number }) {
+  const segments = 30
+  const lit = expected === 0 ? 0 : Math.round((Math.min(marked, expected) / expected) * segments)
+  return (
+    <div aria-hidden className="mt-5 flex h-8 gap-0.75 md:h-12">
+      {Array.from({ length: segments }, (_, index) => (
+        <span key={index} className={cn('flex-1 rounded-full', index < lit ? 'bg-accent-bright' : 'bg-line')} />
+      ))}
+    </div>
+  )
+}
+
 /** The current window's remaining time, as a ring that empties. */
 function Countdown({ remaining }: { remaining: number }) {
-  const size = 84
-  const stroke = 4
+  const size = 96
+  const stroke = 7
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const fraction = Math.max(0, Math.min(1, remaining / WINDOW_SECONDS))
@@ -216,12 +240,12 @@ function Countdown({ remaining }: { remaining: number }) {
           fill="none"
           strokeWidth={stroke}
           strokeLinecap="round"
-          className="stroke-accent"
+          className="stroke-accent-bright"
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - fraction)}
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center font-mono text-[1.1rem] text-ink tabular-nums">
+      <span className="absolute inset-0 grid place-items-center font-mono text-[1.5rem] font-medium text-ink tabular-nums">
         {Math.ceil(remaining)}
       </span>
     </div>
@@ -231,8 +255,8 @@ function Countdown({ remaining }: { remaining: number }) {
 function Ended({ message, sessionId }: { message: string; sessionId?: string }) {
   return (
     <div className="flex h-full items-center justify-center px-6">
-      <div className="w-full max-w-[22rem] text-center">
-        <h1 className="readout text-[1.3rem]">{message}</h1>
+      <div className="w-full max-w-[26rem] text-center">
+        <h1 className="title text-[1.75rem]">{message}</h1>
         <div className="mt-7 space-y-3">
           {sessionId ? (
             <Link to={`/sessions/${sessionId}`} className="btn-primary w-full">

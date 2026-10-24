@@ -201,11 +201,13 @@ describe('projector', () => {
     })
     mount('/live/live')
     await screen.findByText(/of 3 marked/i)
-    expect(screen.getByText('1')).toBeTruthy()
+    // The countdown beside it shows small numbers too, so look only at the count.
+    const count = { selector: '[aria-live="polite"]' }
+    expect(screen.getByText('1', count)).toBeTruthy()
 
     present = ['s-a', 's-b']
     emitRealtime('attendance')
-    expect(await screen.findByText('2')).toBeTruthy()
+    expect(await screen.findByText('2', count)).toBeTruthy()
   })
 
   it('says so when the session has already closed', async () => {

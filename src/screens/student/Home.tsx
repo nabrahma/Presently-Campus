@@ -1,14 +1,15 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Layers, Radio, ScanLine, TriangleAlert } from 'lucide-react'
+import { CalendarClock, ChevronRight, Gauge as GaugeIcon, Layers, Plus, Radio, ScanLine, TriangleAlert } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { Empty } from '../../components/Empty'
-import { Gauge, Meter } from '../../components/Gauge'
+import { SegmentMeter } from '../../components/Gauge'
 import { LoadError } from '../../components/LoadError'
 import { MarginNote, Percent } from '../../components/Margin'
 import { describePhone } from '../../components/PhonePanel'
-import { DataRow, Panel, Readout, SectionHead } from '../../components/Panel'
+import { DataRow, Panel, SectionHead } from '../../components/Panel'
 import { ScreenHead } from '../../components/Shell'
+import { StatCard } from '../../components/StatCard'
 import { courseLabel } from '../../lib/api'
 import { figuresStats, safetyZone, standings, type AttendanceStats } from '../../lib/attendanceMath'
 import { formatDayMonth, formatTime, formatWeekday, keyToDate } from '../../lib/date'
@@ -39,128 +40,132 @@ export function StudentHome() {
 
   if (!data) return error ? <LoadError error={error} onRetry={() => void refresh()} /> : <Booting />
 
+  const lowestPercentage = lowest?.stats.percentage ?? null
+
   return (
     <>
       <ScreenHead label={formatWeekday(keyToDate(date))} title={formatDayMonth(keyToDate(date))} />
 
-      <div className="lg:flex lg:flex-row-reverse lg:items-start lg:gap-8">
-        <div className="lg:sticky lg:top-0 lg:w-[20rem] lg:shrink-0 lg:space-y-3">
-          <Panel className="px-5 py-4">
-            {lowest ? (
-              <Link to={`/courses/${lowest.item.course.id}`} className="block active:opacity-60">
-                <LowestCourse
-                  label={`Lowest · ${courseLabel(lowest.item.course)}`}
-                  stats={lowest.stats}
-                  target={lowest.target}
-                />
-              </Link>
-            ) : (
-              <LowestCourse label="Lowest course" stats={null} target={75} />
-            )}
-          </Panel>
+      {phone ? <PhoneWarning status={phone} /> : null}
 
-          <div className="mt-3 grid grid-cols-2 gap-3 lg:mt-0">
-            <Panel className="px-5 py-4">
-              <Readout
-                label="Least spare"
-                value={leastSpare ? String(leastSpare.stats.bunkable) : '––'}
-                suffix={leastSpare?.stats.bunkable === 1 ? 'class' : 'classes'}
-                tone={leastSpare && leastSpare.stats.bunkable ? 'accent' : 'muted'}
-              />
-              <p className="mt-1.5 truncate font-mono text-[0.6rem] tracking-[0.08em] text-ink-faint uppercase">
-                {leastSpare
-                  ? courseLabel(leastSpare.item.course)
-                  : lowest
-                    ? 'None on target'
-                    : 'No classes yet'}
-              </p>
-            </Panel>
-            <Panel className="px-5 py-4">
-              <Readout
-                label="Below target"
-                value={String(below.length)}
-                suffix={below.length === 1 ? 'course' : 'courses'}
-                tone={below.length > 0 ? 'danger' : 'muted'}
-              />
-            </Panel>
-          </div>
+      {live.length > 0 ? (
+        <div className="mb-5 space-y-3">
+          {live.map((entry) => (
+            <LiveClass key={entry.session.id} entry={entry} />
+          ))}
         </div>
+      ) : null}
 
-        <div className="min-w-0 lg:flex-1">
-          {phone ? <PhoneWarning status={phone} /> : null}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1.5fr_1fr_1fr] lg:gap-4">
+        <Link
+          to={lowest ? `/courses/${lowest.item.course.id}` : '/courses'}
+          className="col-span-2 block rounded-panel lg:col-span-1"
+        >
+          <StatCard
+            icon={GaugeIcon}
+            label={lowest ? `Lowest · ${courseLabel(lowest.item.course)}` : 'Lowest course'}
+            value={lowestPercentage === null ? '––' : String(lowestPercentage)}
+            suffix="%"
+            tone={toneOf(lowestPercentage, lowest?.target ?? 75)}
+            detail={
+              lowest ? `${lowest.stats.present} of ${lowest.stats.total} attended · target ${lowest.target}%` : 'No classes yet'
+            }
+            className="h-full transition-shadow hover:shadow-(--shadow-lift)"
+          >
+            <SegmentMeter
+              percentage={lowestPercentage}
+              target={lowest?.target ?? 75}
+              zone={safetyZone(lowestPercentage, lowest?.target ?? 75)}
+              segments={30}
+            />
+          </StatCard>
+        </Link>
 
-          {live.length > 0 ? (
-            <div className="mt-7 space-y-3 lg:mt-0">
-              {live.map((entry) => (
-                <LiveClass key={entry.session.id} entry={entry} />
-              ))}
-            </div>
-          ) : null}
+        <StatCard
+          icon={CalendarClock}
+          label="Least spare"
+          value={leastSpare ? String(leastSpare.stats.bunkable) : '––'}
+          suffix={leastSpare?.stats.bunkable === 1 ? 'class' : 'classes'}
+          tone={leastSpare ? (leastSpare.stats.bunkable ? 'good' : 'warn') : 'muted'}
+          detail={leastSpare ? courseLabel(leastSpare.item.course) : lowest ? 'None on target' : 'No classes yet'}
+        />
 
-          <div className={live.length > 0 ? 'mt-7' : 'mt-7 lg:mt-0'}>
-            <SectionHead
-              label={`Courses · ${data.courses.length}`}
+        <StatCard
+          icon={TriangleAlert}
+          label="Below target"
+          value={String(below.length)}
+          suffix={below.length === 1 ? 'course' : 'courses'}
+          tone={below.length > 0 ? 'danger' : 'muted'}
+          detail={below.length > 0 ? 'Attend every class until it recovers' : 'Every course is on target'}
+        />
+      </div>
+
+      <Panel className="mt-5 px-5 pt-4 pb-2 md:px-6">
+        <SectionHead
+          label={`Courses · ${data.courses.length}`}
+          action={
+            <Link to="/courses" className="chip min-h-11 bg-elevated px-4 text-ink hover:bg-line">
+              <Plus size={16} strokeWidth={2.4} /> Join
+            </Link>
+          }
+        />
+
+        {data.courses.length === 0 ? (
+          <div className="pb-3">
+            <Empty
+              icon={<Layers size={18} strokeWidth={1.8} />}
+              title="No courses yet"
+              text="Ask your teacher for the course's join code, then join it here."
               action={
-                <Link
-                  to="/courses"
-                  className="font-mono text-[0.65rem] tracking-[0.1em] text-accent uppercase active:opacity-60"
-                >
-                  +Join
+                <Link to="/courses" className="btn-primary">
+                  Join a course
                 </Link>
               }
             />
-
-            {data.courses.length === 0 ? (
-              <div className="mt-4">
-                <Empty
-                  icon={<Layers size={18} strokeWidth={1.8} />}
-                  title="No courses yet"
-                  text="Ask your teacher for the course's join code, then join it here."
-                  action={
-                    <Link to="/courses" className="btn-primary">
-                      Join a course
-                    </Link>
-                  }
-                />
-              </div>
-            ) : (
-              <div>
-                {scored.map(({ item, stats }) => (
-                  <CourseLine key={item.course.id} entry={item} stats={stats} />
-                ))}
-              </div>
-            )}
           </div>
-        </div>
-      </div>
+        ) : (
+          <div>
+            {scored.map(({ item, stats }) => (
+              <CourseLine key={item.course.id} entry={item} stats={stats} />
+            ))}
+          </div>
+        )}
+      </Panel>
     </>
   )
 }
 
-/** A class taking attendance right now. */
+function toneOf(percentage: number | null, target: number) {
+  const zone = safetyZone(percentage, target)
+  return zone === 'danger' ? 'danger' : zone === 'caution' ? 'warn' : zone === 'safe' ? 'good' : 'muted'
+}
+
+/** A class taking attendance right now: the one thing on this screen to act on. */
 function LiveClass({ entry }: { entry: OpenClass }) {
   const marked = entry.mark?.status === 'present'
 
   return (
-    <Panel className="border-accent/40 bg-accent-wash px-5 py-4">
-      <div className="flex items-center gap-2">
-        <Radio size={13} strokeWidth={2.2} className="text-accent motion-safe:animate-pulse" />
-        <p className="label text-accent">Live · started {formatTime(entry.session.startedAt)}</p>
+    <section className="rounded-panel border-2 border-accent-bright/50 bg-accent-wash p-5 md:flex md:items-center md:gap-6 md:p-6">
+      <div className="min-w-0 flex-1">
+        <p className="chip bg-surface text-accent">
+          <Radio size={16} strokeWidth={2.2} className="motion-safe:animate-pulse" />
+          Live · started {formatTime(entry.session.startedAt)}
+        </p>
+        <p className="title mt-3 truncate text-[1.5rem]">{entry.course.name}</p>
+        <p className="mt-1 text-[1.0625rem] text-ink-muted">
+          {marked
+            ? `Marked present · ${formatTime(entry.mark!.markedAt)}`
+            : entry.mark?.status === 'excused'
+              ? 'Excused by your teacher'
+              : 'Not marked yet'}
+        </p>
       </div>
-      <p className="mt-2.5 truncate text-[1rem]">{entry.course.name}</p>
-      <p className="mt-1 font-mono text-[0.62rem] tracking-[0.08em] text-ink-muted uppercase">
-        {marked
-          ? `Marked present · ${formatTime(entry.mark!.markedAt)}`
-          : entry.mark?.status === 'excused'
-            ? 'Excused by your teacher'
-            : 'Not marked yet'}
-      </p>
       {entry.mark ? null : (
-        <Link to="/scan" className="btn-primary mt-4 w-full">
-          <ScanLine size={16} strokeWidth={2.2} /> Scan
+        <Link to="/scan" className="btn-accent mt-5 w-full md:mt-0 md:w-auto md:min-w-[12rem]">
+          <ScanLine size={20} strokeWidth={2.2} /> Scan
         </Link>
       )}
-    </Panel>
+    </section>
   )
 }
 
@@ -172,65 +177,34 @@ function PhoneWarning({ status }: { status: PhoneStatus }) {
   return (
     <Link
       to="/settings"
-      className="mt-7 flex items-start gap-2.5 rounded-2xl border border-warn/40 px-4 py-3 active:opacity-60 lg:mt-0 lg:mb-7"
+      className="mb-5 flex items-center gap-3.5 rounded-panel border border-warn/40 bg-warn-wash px-4 py-4 active:opacity-70 md:px-5"
     >
-      <TriangleAlert size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-warn" />
-      <span className="text-[0.76rem] leading-relaxed text-ink-muted">
-        <span className="text-warn">{copy.label}.</span> {copy.action ?? 'See Settings'} to mark attendance from this phone.
+      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface text-warn">
+        <TriangleAlert size={22} strokeWidth={2} />
       </span>
+      <span className="min-w-0 flex-1 text-[1.0625rem] leading-snug">
+        <span className="font-semibold text-warn">{copy.label}.</span>{' '}
+        <span className="text-ink">{copy.action ?? 'See Settings'} to mark attendance from this phone.</span>
+      </span>
+      <ChevronRight size={20} className="shrink-0 text-ink-muted" />
     </Link>
   )
 }
 
 function CourseLine({ entry, stats }: { entry: StudentCourse; stats: AttendanceStats }) {
   return (
-    <Link to={`/courses/${entry.course.id}`} className="block">
-      <DataRow className="hover-row md:px-2">
+    <Link to={`/courses/${entry.course.id}`} className="block border-b border-line last:border-b-0">
+      <DataRow bare className="hover-row -mx-2 rounded-xl px-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-mono text-[0.82rem] tracking-[0.02em] text-ink uppercase">
+          <p className="truncate text-[1.0625rem] font-semibold">{entry.course.name}</p>
+          <p className="mt-0.5 truncate text-[0.95rem] text-ink-muted">
             {courseLabel(entry.course)}
-          </p>
-          <p className="mt-1 truncate font-mono text-[0.6rem] tracking-[0.08em] text-ink-faint uppercase">
-            {entry.course.name}
             <MarginNote stats={stats} />
           </p>
         </div>
-        <Percent stats={stats} target={entry.course.targetPercentage} className="text-[1.05rem]" />
-        <ChevronRight size={15} className="shrink-0 text-ink-faint" />
+        <Percent stats={stats} target={entry.course.targetPercentage} className="text-[1.5rem]" />
+        <ChevronRight size={20} className="shrink-0 text-ink-faint" />
       </DataRow>
     </Link>
-  )
-}
-
-/** The gauge readout for the course that decides whether someone is safe. */
-function LowestCourse({
-  label,
-  stats,
-  target
-}: {
-  label: string
-  stats: AttendanceStats | null
-  target: number
-}) {
-  const percentage = stats?.percentage ?? null
-  const zone = safetyZone(percentage, target)
-
-  return (
-    <div className="flex items-center gap-4">
-      <Gauge percentage={percentage} zone={zone} />
-      <div className="min-w-0 flex-1">
-        <p className="label truncate">{label}</p>
-        <p className="readout mt-2 text-[1.75rem]">
-          {percentage ?? '––'}
-          <span className="text-[0.5em] text-ink-faint">%</span>
-        </p>
-        <div className="mt-3">
-          <Meter percentage={percentage} target={target} zone={zone} />
-        </div>
-        <p className="mt-2.5 truncate font-mono text-[0.62rem] tracking-[0.08em] text-ink-faint uppercase">
-          {stats ? `${stats.present}/${stats.total} · target ${target}%` : 'No classes yet'}
-        </p>
-      </div>
-    </div>
   )
 }

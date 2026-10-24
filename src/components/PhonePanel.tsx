@@ -10,7 +10,7 @@ import { useUserId } from '../lib/session'
 
 interface Copy {
   label: string
-  tone: 'accent' | 'warn' | 'danger' | 'muted'
+  tone: 'good' | 'warn' | 'danger' | 'muted'
   text: string
   action?: string
 }
@@ -66,17 +66,17 @@ export function describePhone(status: PhoneStatus): Copy {
     case 'active':
       return {
         label: 'Registered',
-        tone: 'accent',
+        tone: 'good',
         text: `This phone marks your attendance. Registered ${formatSessionTime(status.device.createdAt)}.`
       }
   }
 }
 
 const TONE: Record<Copy['tone'], string> = {
-  accent: 'text-accent',
-  warn: 'text-warn',
-  danger: 'text-danger',
-  muted: 'text-ink-muted'
+  good: 'bg-good-wash text-good',
+  warn: 'bg-warn-wash text-warn',
+  danger: 'bg-danger-wash text-danger',
+  muted: 'bg-elevated text-ink-muted'
 }
 
 export function PhonePanel({ status, className }: { status: PhoneStatus | null; className?: string }) {
@@ -85,9 +85,9 @@ export function PhonePanel({ status, className }: { status: PhoneStatus | null; 
 
   if (!status) {
     return (
-      <Panel className={cn('px-5 py-5', className)}>
-        <p className="label">This phone</p>
-        <p className="mt-3 text-[0.8rem] text-ink-muted">Checking…</p>
+      <Panel className={cn('p-5 md:p-6', className)}>
+        <h2 className="title text-[1.25rem]">This phone</h2>
+        <p className="mt-2 text-[1.0625rem] text-ink-muted">Checking…</p>
       </Panel>
     )
   }
@@ -110,16 +110,20 @@ export function PhonePanel({ status, className }: { status: PhoneStatus | null; 
   }
 
   return (
-    <Panel className={cn('px-5 py-5', className)}>
-      <div className="flex items-center gap-2">
-        <Smartphone size={14} strokeWidth={2} className={TONE[copy.tone]} />
-        <p className="label">This phone</p>
-        <p className={cn('label ml-auto', TONE[copy.tone])}>{copy.label}</p>
+    <Panel className={cn('p-5 md:p-6', className)}>
+      <div className="flex items-start gap-3.5">
+        <span className={cn('grid size-12 shrink-0 place-items-center rounded-2xl', TONE[copy.tone])}>
+          <Smartphone size={22} strokeWidth={2} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="title text-[1.25rem]">This phone</h2>
+          <p className={cn('chip mt-2', TONE[copy.tone])}>{copy.label}</p>
+        </div>
       </div>
-      <p className="mt-3 text-[0.8rem] leading-relaxed text-ink-muted">{copy.text}</p>
+      <p className="mt-4 text-[1.0625rem] leading-relaxed text-ink-muted">{copy.text}</p>
       {copy.action ? (
         <button type="button" className="btn-primary mt-5 w-full" disabled={busy} onClick={() => void act()}>
-          {busy ? <Loader2 size={15} className="motion-safe:animate-spin" /> : copy.action}
+          {busy ? <Loader2 size={20} className="motion-safe:animate-spin" /> : copy.action}
         </button>
       ) : null}
     </Panel>

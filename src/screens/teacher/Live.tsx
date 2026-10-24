@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronRight, Play, QrCode, Radio } from 'lucide-react'
+import { ChevronRight, Play, QrCode, Radio, Users } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { Empty } from '../../components/Empty'
 import { LoadError } from '../../components/LoadError'
-import { DataRow, SectionHead } from '../../components/Panel'
+import { Panel, SectionHead } from '../../components/Panel'
 import { ScreenHead } from '../../components/Shell'
 import { courseLabel } from '../../lib/api'
 import { useUserId } from '../../lib/session'
@@ -42,11 +42,15 @@ export function TeacherLive() {
 
   return (
     <>
-      <ScreenHead label={live.length > 0 ? `${live.length} running` : 'Nothing running'} title="Live" />
+      <ScreenHead
+        label={live.length > 0 ? `${live.length} running` : 'Nothing running'}
+        title="Live"
+        icon={<Radio size={26} strokeWidth={2} />}
+      />
 
       {active.length === 0 ? (
         <Empty
-          icon={<Radio size={18} strokeWidth={1.8} />}
+          icon={<Radio size={26} strokeWidth={1.8} />}
           title="No courses yet"
           text="Create a course first. Its sessions start from here."
           action={
@@ -56,43 +60,47 @@ export function TeacherLive() {
           }
         />
       ) : (
-        <div className="space-y-7 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
-          <div>
+        <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
+          <section>
             <SectionHead label={`Running · ${live.length}`} />
             {live.length === 0 ? (
-              <p className="py-4 text-[0.8rem] text-ink-muted">No session is open. Start one when class begins.</p>
+              <p className="dot-grid rounded-panel border border-dashed border-line-strong px-5 py-8 text-center text-[1.0625rem] text-ink-muted">
+                No session is open. Start one when class begins.
+              </p>
             ) : (
-              live.map(({ course, overview }) => (
-                <DataRow key={course.id}>
-                  <Radio size={15} strokeWidth={2.2} className="shrink-0 text-accent" />
-                  <Link to={sessionPath(overview.openSessionId!)} className="min-w-0 flex-1 active:opacity-60">
-                    <p className="truncate font-mono text-[0.82rem] text-ink uppercase">{courseLabel(course)}</p>
-                    <p className="mt-1 flex items-center gap-1 truncate text-[0.75rem] text-ink-muted">
-                      {course.name} <ChevronRight size={12} className="shrink-0" />
+              <div className="space-y-3">
+                {live.map(({ course, overview }) => (
+                  <section key={course.id} className="rounded-panel border-2 border-accent-bright/50 bg-accent-wash p-5">
+                    <p className="chip bg-surface text-accent">
+                      <Radio size={16} strokeWidth={2.2} className="motion-safe:animate-pulse" /> Live
                     </p>
-                  </Link>
-                  <Link
-                    to={projectorPath(overview.openSessionId!)}
-                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 font-mono text-[0.65rem] tracking-[0.1em] text-bg uppercase active:opacity-80"
-                  >
-                    <QrCode size={13} strokeWidth={2.4} /> Show code
-                  </Link>
-                </DataRow>
-              ))
+                    <Link to={sessionPath(overview.openSessionId!)} className="mt-3 flex items-center gap-2">
+                      <span className="min-w-0 flex-1">
+                        <span className="title block truncate text-[1.375rem]">{course.name}</span>
+                        <span className="mt-0.5 block text-[1rem] text-ink-muted">{courseLabel(course)}</span>
+                      </span>
+                      <ChevronRight size={20} className="shrink-0 text-ink-muted" />
+                    </Link>
+                    <Link to={projectorPath(overview.openSessionId!)} className="btn-accent mt-4 w-full">
+                      <QrCode size={20} strokeWidth={2.2} /> Show code
+                    </Link>
+                  </section>
+                ))}
+              </div>
             )}
-          </div>
+          </section>
 
-          <div>
+          <Panel className="px-4 pt-4 pb-2 md:px-6">
             <SectionHead label="Start a session" />
             {idle.length === 0 ? (
-              <p className="py-4 text-[0.8rem] text-ink-muted">Every course has a session running.</p>
+              <p className="pb-4 text-[1rem] text-ink-muted">Every course has a session running.</p>
             ) : (
               idle.map(({ course, overview }) => (
-                <DataRow key={course.id}>
+                <div key={course.id} className="flex min-h-18 items-center gap-3 border-b border-line py-3.5 last:border-b-0">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-[0.82rem] text-ink uppercase">{courseLabel(course)}</p>
-                    <p className="mt-1 truncate text-[0.75rem] text-ink-muted">
-                      {course.name} · {overview.students} {overview.students === 1 ? 'student' : 'students'}
+                    <p className="truncate text-[1.0625rem] font-semibold">{course.name}</p>
+                    <p className="mt-0.5 flex items-center gap-1.5 truncate text-[0.95rem] text-ink-muted">
+                      {courseLabel(course)} · <Users size={15} className="shrink-0" /> {overview.students}
                     </p>
                   </div>
                   <button
@@ -100,15 +108,15 @@ export function TeacherLive() {
                     aria-label={`Start a session of ${course.name}`}
                     disabled={starting !== null}
                     onClick={() => void start(course.id)}
-                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 font-mono text-[0.65rem] tracking-[0.1em] text-bg uppercase active:opacity-80 disabled:opacity-40"
+                    className="btn-primary min-h-12 shrink-0 px-5"
                   >
-                    <Play size={12} strokeWidth={2.6} />
-                    {starting === course.id ? 'Starting' : 'Start'}
+                    <Play size={17} strokeWidth={2.6} />
+                    {starting === course.id ? 'Starting…' : 'Start'}
                   </button>
-                </DataRow>
+                </div>
               ))
             )}
-          </div>
+          </Panel>
         </div>
       )}
     </>

@@ -5,7 +5,7 @@ import { Empty } from './Empty'
 export function LoadError({ error, onRetry }: { error: string | null; onRetry: () => void }) {
   return (
     <Empty
-      icon={<CloudOff size={18} strokeWidth={1.8} />}
+      icon={<CloudOff size={26} strokeWidth={1.8} />}
       title="Could not load this"
       text={error ?? 'Check your connection and try again.'}
       action={

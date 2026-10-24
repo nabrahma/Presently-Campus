@@ -51,7 +51,7 @@ export function ConfirmDialog({
 
   return (
     <Sheet open={open} onClose={onCancel} title={title}>
-      <p className="text-[0.85rem] leading-relaxed text-ink-muted">{description}</p>
+      <p className="text-[1.0625rem] leading-relaxed text-ink-muted">{description}</p>
 
       {requirePhrase ? (
         <div className="mt-6">
@@ -60,7 +60,7 @@ export function ConfirmDialog({
           </label>
           <input
             id="confirm-phrase"
-            className="field font-mono tracking-[0.15em]"
+            className="field font-mono tracking-widest"
             value={phrase}
             autoComplete="off"
             autoCapitalize="characters"
@@ -73,7 +73,7 @@ export function ConfirmDialog({
         </div>
       ) : null}
 
-      <div className="mt-7 flex gap-3">
+      <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row">
         <button type="button" className="btn-secondary flex-1" onClick={onCancel} disabled={busy}>
           Cancel
         </button>
@@ -83,7 +83,7 @@ export function ConfirmDialog({
           disabled={!ready || busy}
           onClick={() => void confirm()}
         >
-          {busy ? 'Working' : confirmLabel}
+          {busy ? 'Working…' : confirmLabel}
         </button>
       </div>
     </Sheet>

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ShieldCheck } from 'lucide-react'
+import { Clock, ShieldCheck, Smartphone } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Empty } from '../../components/Empty'
 import { LoadError } from '../../components/LoadError'
-import { SectionHead } from '../../components/Panel'
+import { Panel, SectionHead } from '../../components/Panel'
 import { ScreenHead } from '../../components/Shell'
 import { formatSessionTime } from '../../lib/date'
 import { useUserId } from '../../lib/session'
@@ -69,23 +69,27 @@ export function TeacherApprovals() {
 
   return (
     <>
-      <ScreenHead label={data.length === 0 ? 'Nothing waiting' : `${data.length} waiting`} title="Approvals" />
+      <ScreenHead
+        label={data.length === 0 ? 'Nothing waiting' : `${data.length} waiting`}
+        title="Approvals"
+        icon={<ShieldCheck size={26} strokeWidth={2} />}
+      />
 
       {data.length === 0 ? (
         <Empty
-          icon={<ShieldCheck size={18} strokeWidth={1.8} />}
+          icon={<ShieldCheck size={26} strokeWidth={1.8} />}
           title="No phones waiting"
           text="When a student in your courses gets a new phone, the request appears here. New students' first phones can be activated early here too."
         />
       ) : (
-        <div className="space-y-7 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
-          <div>
+        <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
+          <Panel className="px-4 pt-4 pb-2 md:px-6">
             <SectionHead label={`Device changes · ${changes.length}`} />
-            <p className="pt-2 text-[0.72rem] leading-relaxed text-ink-faint">
+            <p className="text-[1rem] leading-relaxed text-ink-muted">
               Approving activates the new phone at once and retires the old one.
             </p>
             {changes.length === 0 ? (
-              <p className="py-4 text-[0.8rem] text-ink-muted">None waiting.</p>
+              <p className="py-4 text-[1rem] text-ink-muted">None waiting.</p>
             ) : (
               changes.map((request) => (
                 <RequestRow
@@ -97,16 +101,16 @@ export function TeacherApprovals() {
                 />
               ))
             )}
-          </div>
+          </Panel>
 
-          <div>
+          <Panel className="px-4 pt-4 pb-2 md:px-6">
             <SectionHead label={`New phones cooling off · ${first.length}`} />
-            <p className="pt-2 text-[0.72rem] leading-relaxed text-ink-faint">
+            <p className="text-[1rem] leading-relaxed text-ink-muted">
               First phones activate on their own after 12 hours. Approve one early if you know the
               student is holding it.
             </p>
             {first.length === 0 ? (
-              <p className="py-4 text-[0.8rem] text-ink-muted">None cooling off.</p>
+              <p className="py-4 text-[1rem] text-ink-muted">None cooling off.</p>
             ) : (
               first.map((request) => (
                 <RequestRow
@@ -118,7 +122,7 @@ export function TeacherApprovals() {
                 />
               ))
             )}
-          </div>
+          </Panel>
         </div>
       )}
 
@@ -142,6 +146,17 @@ export function TeacherApprovals() {
   )
 }
 
+function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || '?'
+  )
+}
+
 function RequestRow({
   request,
   busy,
@@ -154,32 +169,46 @@ function RequestRow({
   onReject: () => void
 }) {
   return (
-    <div className="border-b border-line py-4 last:border-b-0">
-      <div className="flex items-baseline gap-3">
-        <span className="w-[5.5rem] shrink-0 font-mono text-[0.72rem] text-ink-muted tabular-nums">{request.rollNumber}</span>
-        <span className="min-w-0 flex-1 truncate text-[0.88rem]">{request.fullName}</span>
+    <div className="border-b border-line py-5 last:border-b-0">
+      <div className="flex items-center gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent-wash text-[0.95rem] font-semibold text-accent">
+          {initials(request.fullName)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[1.125rem] font-semibold">{request.fullName}</span>
+          <span className="block font-mono text-[0.95rem] text-ink-muted">{request.rollNumber}</span>
+        </span>
       </div>
-      <p className="mt-2 font-mono text-[0.62rem] leading-relaxed tracking-[0.04em] text-ink-faint">
-        {describeAgent(request.userAgent)} · registered {formatSessionTime(request.requestedAt)}
-        {request.kind === 'first' && request.activeFrom ? ` · active from ${formatSessionTime(request.activeFrom)}` : ''}
-        {request.replacesSince ? ` · replaces a phone from ${formatSessionTime(request.replacesSince)}` : ''}
-      </p>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <span className="chip bg-elevated text-ink">
+          <Smartphone size={16} strokeWidth={2} /> {describeAgent(request.userAgent)}
+        </span>
+        <span className="chip bg-elevated text-ink-muted">Registered {formatSessionTime(request.requestedAt)}</span>
+        {request.kind === 'first' && request.activeFrom ? (
+          <span className="chip bg-warn-wash text-warn">
+            <Clock size={16} strokeWidth={2} /> Active from {formatSessionTime(request.activeFrom)}
+          </span>
+        ) : null}
+        {request.replacesSince ? (
+          <span className="chip bg-elevated text-ink-muted">Replaces a phone from {formatSessionTime(request.replacesSince)}</span>
+        ) : null}
+      </div>
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
         <button
           type="button"
           disabled={busy}
           onClick={onApprove}
           aria-label={`Approve ${request.fullName}'s phone`}
-          className="h-10 flex-1 rounded-full bg-accent font-mono text-[0.65rem] tracking-[0.1em] text-bg uppercase active:opacity-80 disabled:opacity-40"
+          className="btn-primary"
         >
-          {busy ? 'Working' : request.kind === 'change' ? 'Approve change' : 'Activate now'}
+          {busy ? 'Working…' : request.kind === 'change' ? 'Approve change' : 'Activate now'}
         </button>
         <button
           type="button"
           disabled={busy}
           onClick={onReject}
           aria-label={`Reject ${request.fullName}'s phone`}
-          className="h-10 rounded-full border border-danger/40 px-5 font-mono text-[0.65rem] tracking-[0.1em] text-danger uppercase active:opacity-60 disabled:opacity-40"
+          className="btn-danger"
         >
           Reject
         </button>

@@ -2,16 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!--
-      user-scalable=no is normally an accessibility mistake. Here the app is a
-      fixed single-screen instrument with no reflowing text to enlarge, and
-      pinch-zoom on a PWA reads as a broken web page rather than a feature.
-      Text still scales with the system font-size setting.
-    -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-    />
+    <!-- Zoom stays allowed: some of the people using this need it. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
     <title>Presently Campus — Class Attendance</title>
     <meta
@@ -24,10 +16,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Campus" />
-    <!-- Draws the status bar over the app so the black canvas runs edge to edge. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#060806" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#f1f1ee" />
+    <meta name="color-scheme" content="light dark" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Presently Campus — Class Attendance" />
@@ -38,20 +29,45 @@
     <meta property="og:image" content="/icon-512.png" />
     <meta name="twitter:card" content="summary" />
 
+    <script>
+      /*
+        The saved theme and text size, applied before anything paints so the
+        app never opens in the wrong colours. src/lib/appearance.ts owns the
+        same logic once the bundle has loaded.
+      */
+      ;(function () {
+        var saved = {}
+        try {
+          saved = JSON.parse(localStorage.getItem('presently-campus:v1:appearance') || '{}') || {}
+        } catch (e) {}
+        var dark =
+          saved.theme === 'dark' ||
+          (saved.theme !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)
+        var root = document.documentElement
+        root.setAttribute('data-theme', dark ? 'dark' : 'light')
+        root.setAttribute('data-text', saved.text === 'large' || saved.text === 'largest' ? saved.text : 'standard')
+        var meta = document.querySelector('meta[name="theme-color"]')
+        if (meta) meta.setAttribute('content', dark ? '#0e0e10' : '#f1f1ee')
+      })()
+    </script>
     <style>
-      /* Painted before the bundle loads so launching never flashes white. */
+      /* Painted before the bundle loads so launching never flashes. */
       html,
       body {
         margin: 0;
         height: 100%;
-        background: #060806;
+        background: #f1f1ee;
+      }
+      html[data-theme='dark'],
+      html[data-theme='dark'] body {
+        background: #0e0e10;
       }
     </style>
   </head>
   <body>
     <div id="root"></div>
     <noscript>
-      <div style="padding: 2rem; color: #e7ede4; font-family: system-ui, sans-serif">
+      <div style="padding: 2rem; font-family: system-ui, sans-serif">
         <h1>JavaScript is required</h1>
         <p>Presently Campus needs JavaScript enabled to load attendance.</p>
       </div>

@@ -11,6 +11,9 @@ classes they can still miss or must attend to stay on target.
 Students never mark themselves. A mark exists only because the server accepted
 a valid scan, or a teacher entered it by hand with a reason.
 
+It works on phones and desktops, in light or dark, with large type and a choice
+of three text sizes, and every button says what it does.
+
 The full requirements are in [Presently-Campus-PRD.md](Presently-Campus-PRD.md).
 This repository began as a copy of Presently, the personal attendance tracker,
 and has its own Supabase and Vercel projects; it never talks to the live

@@ -1,13 +1,25 @@
 import type { ReactNode } from 'react'
+import { ChevronRight } from 'lucide-react'
 import { cn } from '../lib/cn'
 
-/** Hairline-outlined container. The app's single card shape. */
+/** White, rounded and softly lifted. The app's single card shape. */
 export function Panel({ className, children }: { className?: string; children: ReactNode }) {
   return <section className={cn('panel', className)}>{children}</section>
 }
 
+export type Tone = 'default' | 'accent' | 'good' | 'danger' | 'warn' | 'muted'
+
+export const TONE_TEXT: Record<Tone, string> = {
+  default: 'text-ink',
+  accent: 'text-accent',
+  good: 'text-good',
+  danger: 'text-danger',
+  warn: 'text-warn',
+  muted: 'text-ink-faint'
+}
+
 /**
- * A named value: small caps label, large mono reading.
+ * A named value: a plain label and a large mono reading.
  * The pairing repeats everywhere, so it is one component rather than a habit.
  */
 export function Readout({
@@ -20,38 +32,30 @@ export function Readout({
   label: string
   value: string
   suffix?: string
-  tone?: 'default' | 'accent' | 'danger' | 'muted'
+  tone?: Tone
   size?: 'sm' | 'md' | 'lg' | 'xl'
 }) {
-  const TONE = {
-    default: 'text-ink',
-    accent: 'text-accent',
-    danger: 'text-danger',
-    muted: 'text-ink-faint'
-  }[tone]
-
   const SIZE = {
-    sm: 'text-[1.05rem]',
-    md: 'text-[1.55rem]',
-    lg: 'text-[2.1rem]',
-    xl: 'text-[3.4rem]'
+    sm: 'text-[1.375rem]',
+    md: 'text-[1.875rem]',
+    lg: 'text-[2.5rem]',
+    xl: 'text-[3.25rem] md:text-[3.75rem]'
   }[size]
 
   return (
     <div>
       <p className="label">{label}</p>
-      <p className={cn('readout mt-2 flex items-baseline gap-1', SIZE, TONE)}>
+      <p className={cn('readout mt-2.5 flex flex-wrap items-baseline gap-x-2 gap-y-1', SIZE, TONE_TEXT[tone])}>
         {value}
-        {suffix ? <span className="text-[0.55em] text-ink-faint">{suffix}</span> : null}
+        {suffix ? (
+          <span className="font-sans text-[1.0625rem] font-medium tracking-normal text-ink-muted">{suffix}</span>
+        ) : null}
       </p>
     </div>
   )
 }
 
-/**
- * A borderless table row divided by hairlines, as used for the schedule list
- * in the reference layout.
- */
+/** A row in a list, divided from the next by a hairline. */
 export function DataRow({
   className,
   children,
@@ -65,24 +69,24 @@ export function DataRow({
   bare?: boolean
 }) {
   const base = cn(
-    'flex w-full items-center gap-3 py-3.5 text-left',
+    'flex min-h-16 w-full items-center gap-3.5 py-3.5 text-left',
     !bare && 'border-b border-line last:border-b-0'
   )
 
   if (!onClick) return <div className={cn(base, className)}>{children}</div>
 
   return (
-    <button type="button" onClick={onClick} className={cn(base, 'active:opacity-60', className)}>
+    <button type="button" onClick={onClick} className={cn(base, 'hover-row -mx-2 rounded-xl px-2 active:opacity-70', className)}>
       {children}
     </button>
   )
 }
 
-/** Section heading with an optional trailing action, matching the `+ADD` rule. */
+/** A section's heading, with an optional action at the right. */
 export function SectionHead({ label, action }: { label: string; action?: ReactNode }) {
   return (
-    <div className="mb-1 flex items-end justify-between gap-3 border-b border-line pb-2.5">
-      <h2 className="label">{label}</h2>
+    <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
+      <h2 className="title text-[1.25rem]">{label}</h2>
       {action}
     </div>
   )
@@ -104,11 +108,19 @@ export function ActionRow({
 }) {
   return (
     <DataRow onClick={onClick} className="py-4">
-      <span className={cn('shrink-0', destructive ? 'text-danger' : 'text-ink-muted')}>{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className={cn('block text-[0.85rem]', destructive && 'text-danger')}>{title}</span>
-        <span className="label mt-1.5 block normal-case">{detail}</span>
+      <span
+        className={cn(
+          'grid size-11 shrink-0 place-items-center rounded-xl',
+          destructive ? 'bg-danger-wash text-danger' : 'bg-elevated text-ink'
+        )}
+      >
+        {icon}
       </span>
+      <span className="min-w-0 flex-1">
+        <span className={cn('block text-[1.0625rem] font-medium', destructive && 'text-danger')}>{title}</span>
+        <span className="mt-0.5 block text-[0.95rem] text-ink-muted">{detail}</span>
+      </span>
+      <ChevronRight size={20} className="shrink-0 text-ink-faint" aria-hidden />
     </DataRow>
   )
 }

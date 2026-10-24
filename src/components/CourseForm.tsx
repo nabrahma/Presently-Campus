@@ -56,9 +56,9 @@ export function CourseForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-4">
+    <form onSubmit={submit} noValidate className="space-y-5">
       <div>
-        <label className="label mb-2.5 block" htmlFor="course-name">
+        <label className="mb-2 block text-[1rem] font-medium" htmlFor="course-name">
           Course name
         </label>
         <input
@@ -73,7 +73,7 @@ export function CourseForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="label mb-2.5 block" htmlFor="course-code">
+          <label className="mb-2 block text-[1rem] font-medium" htmlFor="course-code">
             Code
           </label>
           <input
@@ -87,7 +87,7 @@ export function CourseForm({
           />
         </div>
         <div>
-          <label className="label mb-2.5 block" htmlFor="course-section">
+          <label className="mb-2 block text-[1rem] font-medium" htmlFor="course-section">
             Section
           </label>
           <input
@@ -103,7 +103,7 @@ export function CourseForm({
       </div>
 
       <div>
-        <label className="label mb-2.5 block" htmlFor="course-term">
+        <label className="mb-2 block text-[1rem] font-medium" htmlFor="course-term">
           Term
         </label>
         <input
@@ -118,7 +118,7 @@ export function CourseForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="label mb-2.5 block" htmlFor="course-target">
+          <label className="mb-2 block text-[1rem] font-medium" htmlFor="course-target">
             Target %
           </label>
           <input
@@ -133,7 +133,7 @@ export function CourseForm({
           />
         </div>
         <div>
-          <label className="label mb-2.5 block" htmlFor="course-late">
+          <label className="mb-2 block text-[1rem] font-medium" htmlFor="course-late">
             Late after (min)
           </label>
           <input
@@ -149,19 +149,19 @@ export function CourseForm({
         </div>
       </div>
 
-      <p className="text-[0.72rem] leading-relaxed text-ink-faint">
+      <p className="text-[0.975rem] leading-relaxed text-ink-muted">
         Students below the target are highlighted on the roster. Scans after the late mark are
         flagged for you, not rejected.
       </p>
 
       {error ? (
-        <p role="alert" className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[0.78rem] text-danger">
+        <p role="alert" className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[1rem] text-danger">
           {error}
         </p>
       ) : null}
 
       <button type="submit" className="btn-primary w-full" disabled={busy}>
-        {busy ? <Loader2 size={15} className="motion-safe:animate-spin" /> : submitLabel}
+        {busy ? <Loader2 size={20} className="motion-safe:animate-spin" /> : submitLabel}
       </button>
     </form>
   )

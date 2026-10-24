@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
-import { ChevronLeft, History } from 'lucide-react'
+import { Navigate, useParams } from 'react-router-dom'
+import { BookOpen, History } from 'lucide-react'
+import { BackLink } from '../../components/BackLink'
 import { Booting } from '../../components/Booting'
 import { Empty } from '../../components/Empty'
 import { LoadError } from '../../components/LoadError'
 import { MarginPanel } from '../../components/Margin'
-import { SectionHead } from '../../components/Panel'
+import { Panel, SectionHead } from '../../components/Panel'
+import { ScreenHead } from '../../components/Shell'
 import { courseLabel } from '../../lib/api'
 import { figuresStats } from '../../lib/attendanceMath'
 import { cn } from '../../lib/cn'
@@ -13,12 +15,12 @@ import { formatSessionTime, formatTime } from '../../lib/date'
 import { courseHistory, useStudentData, type HistoryEntry } from '../../lib/student'
 import { OUTCOME_LABELS, type SessionOutcome } from '../../types'
 
-const DOT: Record<SessionOutcome, string> = {
-  present: 'bg-accent',
-  absent: 'bg-danger',
-  excused: 'bg-ink-faint',
-  cancelled: 'bg-ink-faint',
-  open: 'bg-warn'
+const BADGE: Record<SessionOutcome, string> = {
+  present: 'bg-good-wash text-good',
+  absent: 'bg-danger-wash text-danger',
+  excused: 'bg-elevated text-ink-muted',
+  cancelled: 'bg-elevated text-ink-muted',
+  open: 'bg-warn-wash text-warn'
 }
 
 export function StudentCourseDetail() {
@@ -39,37 +41,26 @@ export function StudentCourseDetail() {
 
   return (
     <>
-      <Link
-        to="/courses"
-        className="mb-5 inline-flex items-center gap-1.5 font-mono text-[0.65rem] tracking-[0.1em] text-ink-muted uppercase active:opacity-60"
-      >
-        <ChevronLeft size={14} strokeWidth={2.2} />
-        Courses
-      </Link>
+      <BackLink to="/courses" label="Courses" />
 
-      <header className="mb-6">
-        <p className="label truncate">
-          {courseLabel(course)}
-          {course.term ? ` · ${course.term}` : ''}
-        </p>
-        <h1 className="mt-2.5 text-[1.4rem] leading-tight tracking-[-0.01em]">{course.name}</h1>
-        <p className="mt-2 font-mono text-[0.6rem] tracking-[0.08em] text-ink-faint uppercase">
-          {entry.teacherName || 'Teacher'} · target {course.targetPercentage}%
-        </p>
-      </header>
+      <ScreenHead
+        icon={<BookOpen size={26} strokeWidth={2} />}
+        title={course.name}
+        label={`${courseLabel(course)}${course.term ? ` · ${course.term}` : ''} · ${entry.teacherName || 'Teacher'} · target ${course.targetPercentage}%`}
+      />
 
-      <div className="lg:flex lg:items-start lg:gap-8">
+      <div className="lg:flex lg:items-start lg:gap-5">
         <MarginPanel
           stats={stats}
           target={course.targetPercentage}
-          className="lg:sticky lg:top-0 lg:w-[22rem] lg:shrink-0"
+          className="lg:sticky lg:top-0 lg:w-[26rem] lg:shrink-0"
         />
 
-        <div className="mt-7 min-w-0 lg:mt-0 lg:flex-1">
+        <Panel className="mt-5 min-w-0 px-5 pt-4 pb-2 md:px-6 lg:mt-0 lg:flex-1">
           <SectionHead label={`Classes · ${history.length}`} />
 
           {history.length === 0 ? (
-            <div className="mt-4">
+            <div className="pb-3">
               <Empty
                 icon={<History size={18} strokeWidth={1.8} />}
                 title="No classes yet"
@@ -83,7 +74,7 @@ export function StudentCourseDetail() {
               ))}
             </div>
           )}
-        </div>
+        </Panel>
       </div>
     </>
   )
@@ -104,17 +95,12 @@ function HistoryRow({ item }: { item: HistoryEntry }) {
             : null
 
   return (
-    <div className="flex items-center gap-3 border-b border-line py-3.5 last:border-b-0">
-      <span aria-hidden className={cn('h-1.5 w-1.5 shrink-0 rounded-full', DOT[outcome])} />
+    <div className="flex min-h-16 items-center gap-3 border-b border-line py-3.5 last:border-b-0">
       <div className="min-w-0 flex-1">
-        <p className="font-mono text-[0.78rem] text-ink tabular-nums">{formatSessionTime(session.startedAt)}</p>
-        {detail ? (
-          <p className="mt-1 truncate font-mono text-[0.6rem] tracking-[0.06em] text-ink-faint">{detail}</p>
-        ) : null}
+        <p className="text-[1.0625rem] font-medium tabular-nums">{formatSessionTime(session.startedAt)}</p>
+        {detail ? <p className="mt-0.5 truncate text-[0.95rem] text-ink-muted">{detail}</p> : null}
       </div>
-      <span className={cn('label', outcome === 'absent' && 'text-danger', outcome === 'present' && 'text-accent')}>
-        {OUTCOME_LABELS[outcome]}
-      </span>
+      <span className={cn('chip shrink-0', BADGE[outcome])}>{OUTCOME_LABELS[outcome]}</span>
     </div>
   )
 }

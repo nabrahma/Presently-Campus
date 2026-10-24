@@ -1,9 +1,7 @@
-import { Meter } from './Gauge'
-import { Panel, Readout } from './Panel'
+import { SegmentMeter, ZONE_TEXT } from './Gauge'
+import { Panel, Readout, type Tone } from './Panel'
 import { cn } from '../lib/cn'
 import { safetyZone, type AttendanceStats } from '../lib/attendanceMath'
-
-type Tone = 'default' | 'accent' | 'danger' | 'muted'
 
 /** The one figure that answers "can I miss the next class": spare or needed. */
 export function marginOf(stats: AttendanceStats): { value: string; caption: string; tone: Tone } {
@@ -12,7 +10,7 @@ export function marginOf(stats: AttendanceStats): { value: string; caption: stri
     return {
       value: String(stats.bunkable),
       caption: stats.bunkable === 1 ? 'class spare' : 'classes spare',
-      tone: stats.bunkable === 0 ? 'default' : 'accent'
+      tone: stats.bunkable === 0 ? 'warn' : 'good'
     }
   }
   if (stats.comeback !== null) {
@@ -44,7 +42,7 @@ export function marginExplanation(stats: AttendanceStats, target: number, subjec
 export function MarginNote({ stats }: { stats: AttendanceStats }) {
   if (stats.total === 0) return null
   if (stats.bunkable !== null) {
-    return <span className={stats.bunkable > 0 ? 'text-accent' : undefined}>{` · ${stats.bunkable} spare`}</span>
+    return <span className={stats.bunkable > 0 ? 'text-good' : 'text-warn'}>{` · ${stats.bunkable} spare`}</span>
   }
   return (
     <span className="text-danger">
@@ -65,17 +63,9 @@ export function Percent({
 }) {
   const zone = safetyZone(stats.percentage, target)
   return (
-    <span
-      className={cn(
-        'readout',
-        zone === 'danger' && 'text-danger',
-        zone === 'caution' && 'text-warn',
-        zone === 'safe' && 'text-accent',
-        className
-      )}
-    >
+    <span className={cn('readout', ZONE_TEXT[zone], className)}>
       {stats.percentage === null ? '––' : stats.percentage}
-      <span className="text-[0.55em] text-ink-faint">%</span>
+      <span className="text-[0.6em] text-ink-muted">%</span>
     </span>
   )
 }
@@ -96,23 +86,23 @@ export function MarginPanel({
   const zone = safetyZone(stats.percentage, target)
 
   return (
-    <Panel className={cn('px-5 py-5', className)}>
+    <Panel className={cn('p-5 md:p-7', className)}>
       <Readout label="Margin" value={margin.value} suffix={margin.caption} tone={margin.tone} size="xl" />
-      <p className="mt-4 text-[0.82rem] leading-relaxed text-ink-muted">
+      <p className="mt-4 max-w-[34rem] text-[1.0625rem] leading-relaxed text-ink-muted">
         {marginExplanation(stats, target, subject)}
       </p>
 
-      <div className="mt-5 border-t border-line pt-4">
-        <div className="mb-3 flex items-baseline justify-between">
-          <Percent stats={stats} target={target} className="text-[1.1rem]" />
-          <span className="font-mono text-[0.62rem] tracking-[0.08em] text-ink-faint uppercase">
-            {stats.present}/{stats.total} · target {target}%
+      <div className="inset mt-6 p-4 md:p-5">
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <Percent stats={stats} target={target} className="text-[1.75rem]" />
+          <span className="text-[0.95rem] text-ink-muted">
+            {stats.present} of {stats.total} attended · target {target}%
           </span>
         </div>
-        <Meter percentage={stats.percentage} target={target} zone={zone} />
+        <SegmentMeter percentage={stats.percentage} target={target} zone={zone} />
       </div>
 
-      <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-line pt-4">
+      <dl className="mt-4 grid grid-cols-3 gap-2.5 md:gap-3">
         {(
           [
             ['Present', stats.present],
@@ -120,9 +110,9 @@ export function MarginPanel({
             ['Excused', stats.holiday]
           ] as const
         ).map(([label, value]) => (
-          <div key={label}>
+          <div key={label} className="rounded-2xl border border-line px-3.5 py-3.5">
             <dt className="label">{label}</dt>
-            <dd className="readout mt-2 text-[1.1rem]">{value}</dd>
+            <dd className="readout mt-2 text-[1.5rem]">{value}</dd>
           </div>
         ))}
       </dl>

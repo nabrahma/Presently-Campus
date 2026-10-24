@@ -30,9 +30,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="flex h-full items-center justify-center px-6">
-        <div className="w-full max-w-[22rem] text-center">
-          <h1 className="readout text-[1.3rem]">Something broke</h1>
-          <p className="mt-3 text-[0.85rem] leading-relaxed text-ink-muted">
+        <div className="w-full max-w-[26rem] text-center">
+          <h1 className="title text-[1.75rem]">Something went wrong</h1>
+          <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">
             Attendance is kept on the server, so nothing is lost. Reloading usually clears this.
           </p>
           <button
@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Reload
           </button>
           {import.meta.env.DEV ? (
-            <pre className="mt-6 overflow-x-auto rounded-2xl border border-line p-3 text-left font-mono text-[0.68rem] text-ink-muted">
+            <pre className="mt-6 overflow-x-auto rounded-2xl border border-line p-3 text-left font-mono text-[0.85rem] text-ink-muted">
               {error.message}
             </pre>
           ) : null}

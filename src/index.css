@@ -3,44 +3,119 @@
 @import 'tailwindcss';
 
 /*
-  Presently is a single committed look: a black instrument panel with one
-  green accent. Every colour lives here and nowhere else.
+  `dark:` follows the theme the app has applied, not only the system setting,
+  so a teacher who picks Light on a dark-mode laptop gets light everywhere.
+*/
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+  Presently Campus: white cards on a warm grey page, black for the primary
+  action, one orange for the brand and live marks. Every colour lives here and
+  nowhere else, and each has a light and a dark value.
+
+  The people reading this are often not young, so body text clears 7:1
+  against its background and secondary text clears 4.5:1 even at small sizes.
 */
 @theme {
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', monospace;
 
-  /* Near-black, very slightly green, so the accent reads as belonging to it. */
-  --color-bg: #060806;
-  --color-surface: #0d100d;
-  --color-elevated: #161a16;
-  --color-line: #232922;
-  --color-line-strong: #363d35;
+  --color-bg: #f1f1ee;
+  --color-surface: #ffffff;
+  --color-elevated: #f5f5f3;
+  --color-line: #e5e5e1;
+  --color-line-strong: #cfcfca;
 
-  --color-ink: #e7ede4;
-  --color-ink-muted: #8b948a;
-  --color-ink-faint: #5c645b;
+  --color-ink: #17171a;
+  --color-ink-muted: #4c4c53;
+  --color-ink-faint: #74747c;
 
-  --color-accent: #7fc99a;
-  --color-accent-solid: #2c6b45;
-  --color-accent-ink: #f0faf3;
-  --color-accent-wash: #101d15;
+  /* Text and outlines in the accent, and the fill behind white text. */
+  --color-accent: #c2410c;
+  /* The brighter orange for bars and dots, which carry no text. */
+  --color-accent-bright: #f0601f;
+  --color-accent-solid: #c2410c;
+  --color-accent-ink: #ffffff;
+  --color-accent-wash: #fdeee5;
 
-  --color-danger: #e8836f;
-  --color-danger-solid: #7a2e22;
-  --color-danger-wash: #1e100d;
-  --color-warn: #d9a94c;
+  --color-good: #157a3b;
+  --color-good-bright: #22a356;
+  --color-good-wash: #e6f4eb;
 
-  --radius-panel: 1.375rem;
+  --color-danger: #be1e3c;
+  --color-danger-solid: #be1e3c;
+  --color-danger-wash: #fcebee;
+
+  --color-warn: #925400;
+  --color-warn-bright: #e3a018;
+  --color-warn-wash: #fff3dc;
+
+  --radius-panel: 1.5rem;
+
+  --shadow-card: 0 1px 2px rgb(23 23 26 / 0.04), 0 6px 24px -8px rgb(23 23 26 / 0.08);
+  --shadow-lift: 0 1px 2px rgb(23 23 26 / 0.06), 0 10px 30px -10px rgb(23 23 26 / 0.18);
 
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/*
+  Dark is its own set of values, chosen against the dark page rather than
+  flipped from the light ones. It applies when chosen, or when the system is
+  dark and nothing was chosen.
+*/
 @layer base {
+  :root[data-theme='dark'] {
+    --color-bg: #0e0e10;
+    --color-surface: #18181b;
+    --color-elevated: #222226;
+    --color-line: #2c2c31;
+    --color-line-strong: #43434a;
+
+    --color-ink: #f3f3f1;
+    --color-ink-muted: #c0c0c7;
+    --color-ink-faint: #93939c;
+
+    --color-accent: #ff8f57;
+    --color-accent-bright: #ff7a3d;
+    --color-accent-solid: #ff8f57;
+    --color-accent-ink: #1b0d05;
+    --color-accent-wash: #2b1a10;
+
+    --color-good: #63d991;
+    --color-good-bright: #3ec272;
+    --color-good-wash: #11251a;
+
+    --color-danger: #ff8094;
+    --color-danger-solid: #ff8094;
+    --color-danger-wash: #2c1419;
+
+    --color-warn: #f3bf55;
+    --color-warn-bright: #e3a018;
+    --color-warn-wash: #2a2111;
+
+    --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02);
+    --shadow-lift: 0 12px 32px -12px rgb(0 0 0 / 0.7);
+
+    color-scheme: dark;
+  }
+
+  /*
+    Text size is a setting, not only pinch-zoom: every size in the app is in
+    rem, so the root decides how large everything reads.
+  */
   html {
     height: 100%;
     -webkit-text-size-adjust: 100%;
-    color-scheme: dark;
+    color-scheme: light;
+    font-size: 100%;
+  }
+
+  html[data-text='large'] {
+    font-size: 112.5%;
+  }
+
+  html[data-text='largest'] {
+    font-size: 125%;
   }
 
   /*
@@ -56,6 +131,8 @@
     background-color: var(--color-bg);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -66,10 +143,8 @@
 
   /*
     Touch-only behaviour, keyed on the pointer rather than the screen size.
-
-    Suppressing selection and long-press menus is what stops a phone from
-    feeling like a web page, but on a desktop it breaks the ordinary
-    expectation that text can be selected and copied.
+    Long-press menus are suppressed on phones so a held button does not open
+    a copy menu; text stays selectable with a mouse.
   */
   @media (pointer: coarse) {
     body {
@@ -92,19 +167,24 @@
 
   button {
     touch-action: manipulation;
+    cursor: pointer;
   }
 
-  /* A pointer can hit smaller targets, so rows may respond to hover. */
+  button:disabled {
+    cursor: default;
+  }
+
   @media (hover: hover) {
     .hover-row:hover {
-      background-color: var(--color-surface);
+      background-color: var(--color-elevated);
     }
   }
 
+  /* A thick, offset ring: the focus position must be obvious, not subtle. */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 3px solid var(--color-accent);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 10px;
   }
 
   input,
@@ -126,8 +206,8 @@
   }
 
   ::selection {
-    background: var(--color-accent-solid);
-    color: var(--color-accent-ink);
+    background: var(--color-accent-wash);
+    color: var(--color-ink);
   }
 
   .scroll-region {
@@ -136,7 +216,6 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* A visible scrollbar inside a phone-sized app looks like a browser. */
   @media (pointer: coarse) {
     .scroll-region {
       scrollbar-width: none;
@@ -155,7 +234,7 @@
     }
 
     .scroll-region::-webkit-scrollbar {
-      width: 10px;
+      width: 12px;
     }
 
     .scroll-region::-webkit-scrollbar-thumb {
@@ -168,49 +247,77 @@
 }
 
 @layer components {
-  /* The tiny all-caps labels that name every value on screen. */
+  /* The name above a value or a field. Plain words, never tiny capitals. */
   .label {
-    @apply font-mono text-[0.65rem] leading-none font-medium tracking-[0.12em] text-ink-muted uppercase;
+    @apply text-[0.875rem] leading-snug font-medium text-ink-muted;
   }
 
+  /* Numbers: mono so columns of figures line up and digits never shift. */
   .readout {
-    @apply font-mono leading-none font-normal tracking-[-0.02em] text-ink tabular-nums;
+    @apply font-mono leading-none font-medium tracking-[-0.03em] text-ink tabular-nums;
   }
 
+  /* Headings: the sans face, heavier and tighter. */
+  .title {
+    @apply leading-tight font-semibold tracking-[-0.02em] text-ink;
+  }
+
+  /* The app's card: white, rounded, a hairline and a soft shadow. */
   .panel {
-    @apply rounded-panel border border-line;
+    @apply rounded-panel border border-line bg-surface shadow-(--shadow-card);
+  }
+
+  /* A recessed area inside a card, as behind the reference's usage bar. */
+  .inset {
+    @apply rounded-2xl bg-elevated;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.875rem] leading-none font-medium;
   }
 
   /* Buttons share geometry; Tailwind v4 cannot @apply one custom class into
-     another, so the base is a single selector list. */
+     another, so the base is a single selector list. 56px tall clears every
+     touch-target guideline with room to spare. */
   .btn,
   .btn-primary,
   .btn-secondary,
+  .btn-accent,
   .btn-danger {
-    @apply inline-flex h-13 items-center justify-center gap-2 rounded-full px-6 font-mono
-           text-[0.78rem] font-medium tracking-[0.08em] uppercase transition-colors duration-150
-           select-none disabled:pointer-events-none disabled:opacity-40;
+    @apply inline-flex min-h-14 items-center justify-center gap-2 rounded-full px-6 text-[1rem]
+           font-semibold transition-[background-color,border-color,color,transform] duration-150
+           select-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45;
   }
 
   .btn-primary {
-    @apply bg-accent text-bg;
+    @apply bg-ink text-surface hover:bg-ink/88;
+  }
+
+  .btn-accent {
+    @apply bg-accent-solid text-accent-ink hover:bg-accent-solid/90;
   }
 
   .btn-secondary {
-    @apply border border-line-strong text-ink;
+    @apply border border-line-strong bg-surface text-ink hover:bg-elevated;
   }
 
   .btn-danger {
-    @apply border border-danger/40 text-danger;
+    @apply border border-danger/45 bg-surface text-danger hover:bg-danger-wash;
   }
 
   /*
-    16px is the smallest size iOS Safari will not zoom into on focus. Anything
-    smaller makes the whole layout lurch the moment a field is tapped.
+    17px is above the 16px iOS Safari zooms into on focus, and large enough
+    to read without glasses.
   */
   .field {
-    @apply h-13 w-full rounded-2xl border border-line bg-surface px-4 text-[16px] text-ink
-           transition-colors placeholder:text-ink-faint focus:border-line-strong focus:outline-none;
+    @apply min-h-14 w-full rounded-2xl border border-line-strong bg-surface px-4 text-[1.0625rem]
+           text-ink transition-colors placeholder:text-ink-faint focus:border-ink focus:outline-none;
+  }
+
+  /* The dotted ground behind a section, as in the reference's signal area. */
+  .dot-grid {
+    background-image: radial-gradient(var(--color-line-strong) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
   }
 }
 

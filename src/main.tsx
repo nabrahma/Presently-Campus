@@ -5,8 +5,11 @@ import { Toaster } from 'sonner'
 import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { UpdatePrompt } from './components/UpdatePrompt'
+import { startAppearance } from './lib/appearance'
 import { SessionProvider } from './lib/session'
 import './index.css'
+
+startAppearance()
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Root element is missing from the document.')
@@ -25,12 +28,14 @@ createRoot(container).render(
               // Toasts read from the app's tokens rather than shipping a
               // second palette that would ignore the theme.
               style: {
-                background: 'var(--color-elevated)',
+                background: 'var(--color-surface)',
                 color: 'var(--color-ink)',
                 border: '1px solid var(--color-line)',
-                borderRadius: '9999px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.78rem'
+                borderRadius: '1.25rem',
+                boxShadow: 'var(--shadow-lift)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: '1rem',
+                padding: '1rem 1.15rem'
               }
             }}
           />

@@ -7,12 +7,10 @@ import { Empty } from '../../components/Empty'
 import { Meter } from '../../components/Gauge'
 import { LoadError } from '../../components/LoadError'
 import { MarginNote, Percent } from '../../components/Margin'
-import { DataRow } from '../../components/Panel'
 import { ScreenHead } from '../../components/Shell'
 import { Sheet } from '../../components/Sheet'
 import { courseLabel } from '../../lib/api'
 import { figuresStats, safetyZone } from '../../lib/attendanceMath'
-import { cn } from '../../lib/cn'
 import { useUserId } from '../../lib/session'
 import { joinCourse, useStudentData, type StudentCourse } from '../../lib/student'
 
@@ -28,13 +26,9 @@ export function StudentCourses() {
         label={`${data.courses.length} enrolled`}
         title="Courses"
         action={
-          <button
-            type="button"
-            onClick={() => setJoining(true)}
-            aria-label="Join a course"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-bg active:opacity-80"
-          >
-            <Plus size={18} strokeWidth={2.4} />
+          <button type="button" onClick={() => setJoining(true)} aria-label="Join a course" className="btn-primary">
+            <Plus size={20} strokeWidth={2.4} />
+            <span>Join</span>
           </button>
         }
       />
@@ -51,7 +45,7 @@ export function StudentCourses() {
           }
         />
       ) : (
-        <div className="divide-y divide-line md:grid md:grid-cols-2 md:gap-3 md:divide-y-0 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:gap-4 xl:grid-cols-3">
           {data.courses.map((entry) => (
             <CourseCard key={entry.course.id} entry={entry} />
           ))}
@@ -76,34 +70,31 @@ function CourseCard({ entry }: { entry: StudentCourse }) {
   const zone = safetyZone(stats.percentage, course.targetPercentage)
 
   return (
-    <Link to={`/courses/${course.id}`} className="block h-full">
-      <DataRow
-        bare
-        className={cn(
-          'py-4',
-          'md:h-full md:rounded-panel md:border md:border-line md:px-4',
-          'md:transition-colors md:hover:border-line-strong'
-        )}
-      >
+    <Link
+      to={`/courses/${course.id}`}
+      className="panel flex h-full flex-col p-5 transition-shadow hover:shadow-(--shadow-lift)"
+    >
+      <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.9rem] text-ink">{course.name}</p>
-          <p className="mt-1.5 truncate font-mono text-[0.6rem] tracking-[0.08em] text-ink-faint uppercase">
+          <p className="title truncate text-[1.25rem]">{course.name}</p>
+          <p className="mt-1 truncate text-[0.95rem] text-ink-muted">
             {courseLabel(course)}
             {entry.teacherName ? ` · ${entry.teacherName}` : ''}
           </p>
-          <div className="mt-2.5 max-w-[9rem]">
-            <Meter percentage={stats.percentage} target={course.targetPercentage} zone={zone} />
-          </div>
         </div>
-        <div className="shrink-0 text-right">
-          <Percent stats={stats} target={course.targetPercentage} className="text-[1.15rem]" />
-          <p className="mt-1 font-mono text-[0.6rem] text-ink-faint tabular-nums">
-            {stats.total === 0 ? '—' : `${stats.present}/${stats.total}`}
-            <MarginNote stats={stats} />
-          </p>
-        </div>
-        <ChevronRight size={15} className="shrink-0 text-ink-faint" />
-      </DataRow>
+        <ChevronRight size={20} className="mt-1 shrink-0 text-ink-faint" />
+      </div>
+
+      <div className="mt-5 flex items-end justify-between gap-3">
+        <Percent stats={stats} target={course.targetPercentage} className="text-[2.25rem]" />
+        <p className="pb-1 text-right text-[0.95rem] text-ink-muted tabular-nums">
+          {stats.total === 0 ? 'No classes yet' : `${stats.present} of ${stats.total}`}
+          <MarginNote stats={stats} />
+        </p>
+      </div>
+      <div className="mt-3">
+        <Meter percentage={stats.percentage} target={course.targetPercentage} zone={zone} />
+      </div>
     </Link>
   )
 }
@@ -143,12 +134,12 @@ export function JoinForm({ onJoined }: { onJoined?: () => void }) {
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
       <div>
-        <label className="label mb-2.5 block" htmlFor="join-code">
+        <label className="mb-2 block text-[1rem] font-medium" htmlFor="join-code">
           Join code
         </label>
         <input
           id="join-code"
-          className="field text-center font-mono text-[1.4rem] tracking-[0.4em] uppercase"
+          className="field min-h-16 text-center font-mono text-[1.75rem] tracking-[0.35em] uppercase"
           autoCapitalize="characters"
           autoComplete="off"
           spellCheck={false}
@@ -163,13 +154,13 @@ export function JoinForm({ onJoined }: { onJoined?: () => void }) {
       </div>
 
       {error ? (
-        <p role="alert" className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[0.78rem] text-danger">
+        <p role="alert" className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[1rem] text-danger">
           {error}
         </p>
       ) : null}
 
       <button type="submit" className="btn-primary w-full" disabled={busy || code.length !== 6}>
-        {busy ? <Loader2 size={15} className="motion-safe:animate-spin" /> : 'Join'}
+        {busy ? <Loader2 size={20} className="motion-safe:animate-spin" /> : 'Join'}
       </button>
     </form>
   )

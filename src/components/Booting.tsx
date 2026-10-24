@@ -10,11 +10,11 @@ export function Booting() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5">
       <motion.span
-        className="h-2 w-2 rounded-full bg-accent"
+        className="size-3 rounded-full bg-accent-bright"
         animate={{ opacity: [1, 0.2, 1], scale: [1, 0.8, 1] }}
         transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <p className="label">Loading</p>
+      <p className="text-[1.0625rem] text-ink-muted">Loading…</p>
     </div>
   )
 }
