@@ -26,3 +26,6 @@ Thumbs.db
 .agents/
 skills-lock.json
 supabase/.temp/
+
+# Requirements draft: kept locally, not published
+Presently-Campus-PRD.md

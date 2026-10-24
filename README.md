@@ -2,6 +2,8 @@
 
 Class attendance by QR scan, for teachers and students.
 
+![A teacher's course: roster with each student's standing, and the session list](docs/screenshots/teacher-course.png)
+
 A teacher starts a session and projects a QR code that changes every ten
 seconds. Students scan it from the one phone registered to them, and are marked
 present in about a second. Both sides then see attendance per subject: the
@@ -14,12 +16,24 @@ a valid scan, or a teacher entered it by hand with a reason.
 It works on phones and desktops, in light or dark, with large type and a choice
 of three text sizes, and every button says what it does.
 
-The full requirements are in [Presently-Campus-PRD.md](Presently-Campus-PRD.md).
 This repository began as a copy of Presently, the personal attendance tracker,
 and has its own Supabase and Vercel projects; it never talks to the live
 Presently app.
 
 ## What each side gets
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/screenshots/student-courses.png" alt="A student's courses, each with its percentage and margin"></td>
+    <td width="33%"><img src="docs/screenshots/student-course-dark.png" alt="One course for a student, in dark mode: four classes spare"></td>
+    <td width="33%"><img src="docs/screenshots/teacher-approvals.png" alt="A teacher approving a student's new phone"></td>
+  </tr>
+  <tr>
+    <td align="center">A student's courses</td>
+    <td align="center">One course, in dark mode</td>
+    <td align="center">Approving a new phone</td>
+  </tr>
+</table>
 
 **Students** (Home · Scan · Courses · Settings)
 
@@ -43,6 +57,19 @@ Presently app.
 - Analysis: who will not reach the target by a chosen date, attendance class by
   class, and absence by weekday and hour.
 
+![The projector view: a rotating QR code beside the live count of who has scanned](docs/screenshots/teacher-projector.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/teacher-analysis.png" alt="Analysis: students who will fall below the target before a cutoff date"></td>
+    <td width="50%"><img src="docs/screenshots/sign-in.png" alt="Sign in with a college email"></td>
+  </tr>
+  <tr>
+    <td align="center">Who needs attention before the cutoff</td>
+    <td align="center">Sign in with a college email</td>
+  </tr>
+</table>
+
 ## How proxies are stopped
 
 | Attempt | What stops it |
@@ -54,8 +81,8 @@ Presently app.
 | Calling the API directly | Students cannot write attendance at all; only the server function does |
 | A live video call of the code, a borrowed phone carried in | Not blocked outright. Scans from off campus, from one connection in a burst, or after the late mark are flagged for the teacher |
 
-Section 5 of the requirements has the full design, and section 10 the
-acceptance tests to run on real phones before a pilot.
+[DESIGN.md](DESIGN.md) has the full design and the acceptance tests to run on
+real phones before a pilot.
 
 ## Run it locally
 
@@ -148,8 +175,10 @@ supabase/
 
 ## Team
 
-Built by nabrahma and Abhishek Kokadwar for the IoTBDM project. Section 13 of the
-requirements records who owns each part and how commits are written.
+Built by nabrahma and Abhishek Kokadwar for the IoTBDM project. nabrahma owns
+the schema, the server functions and the student app; Abhishek Kokadwar owns
+the teacher app, the flags and analysis, and the acceptance tests on real
+phones.
 
 ## License
 
