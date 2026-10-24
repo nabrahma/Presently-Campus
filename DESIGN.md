@@ -3,9 +3,8 @@
 ## What this is
 
 A web app (installable PWA) that takes class attendance by QR scan and shows it
-per subject to the teacher and the student. One college per deployment. The
-requirements are in [Presently-Campus-PRD.md](Presently-Campus-PRD.md); this
-document records how they are met and why.
+per subject to the teacher and the student. One college per deployment. This
+document records how its requirements are met and why.
 
 The governing rule: **the client is never trusted to decide whether a mark is
 valid.** Every rule that stops a proxy runs on the server.
@@ -60,10 +59,10 @@ for no one.
    iOS Safari), signs `"<token>|<user_id>"` with the phone's private key, and
    calls `mark-attendance`.
 3. The function takes the user from the access token and runs the nine checks
-   of section 5.4 in order, stopping at the first failure: session exists, is
-   open, token valid for this window or the last, student enrolled, device theirs
-   and active, past cooling-off and registered before the class began, signature
-   valid, phone not used for anyone else, student not already marked.
+   in order, stopping at the first failure: session exists, is open, token
+   valid for this window or the last, student enrolled, device theirs and active,
+   past cooling-off and registered before the class began, signature valid,
+   phone not used for anyone else, student not already marked.
 4. `record_qr_mark` writes the mark with any soft flags; the table's unique
    constraints settle two scans racing each other.
 5. The attempt is logged. Realtime delivers the new row to the teacher's
@@ -125,7 +124,22 @@ paint so the app never opens in the wrong theme.
   role assignment, RLS isolation between students and between teachers, every
   function's permission checks, the figures in excused, cancelled, open and
   late-joined cases, approvals, flags and the export.
-- Acceptance tests on real phones: section 10 of the requirements.
+- Acceptance tests on real phones, run before any pilot:
+
+  | # | Do this | Expect |
+  | --- | --- | --- |
+  | 1 | Scan the projected code normally | Marked present in under 2 s |
+  | 2 | Photograph the code, wait 30 s, scan the photo | "Code expired" |
+  | 3 | Sign into student B's account on student A's phone and scan | "This phone isn't registered to you" |
+  | 4 | A scans, signs out, signs in as B on the same phone and scans | Refused: the phone's key belongs to A, and one phone marks one student per class |
+  | 5 | Clear site data, sign in as B, register the phone, scan in the same class | "New phones can't mark this class" |
+  | 6 | Write to the attendance table from the browser console with a student's token | Refused by RLS |
+  | 7 | Replay a valid scan request after the session closes | "This class has closed" |
+  | 8 | Scan a course you're not enrolled in | "You're not in this course" |
+  | 9 | Set the teacher's laptop clock 2 minutes wrong, then run a session | Scans still succeed |
+  | 10 | 60 students scan within 2 minutes | All accepted; the live count reaches 60 |
+  | 11 | Scan twice | "Already marked present"; one row only |
+  | 12 | A teacher marks a student by hand | The row has method manual, the reason and the teacher |
 
 ## Known limits
 
