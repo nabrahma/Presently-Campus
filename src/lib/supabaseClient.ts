@@ -199,7 +199,18 @@ export function describeError(error: unknown): string {
     return 'The server is catching up with your sign-in. Try again in a moment.'
   }
   if (/refresh token|session.*expired|not authenticated|jwt expired/i.test(message)) {
-    return 'Your session expired. Sign in again to keep syncing.'
+    return 'Your session expired. Sign in again.'
+  }
+  // Auth hides the sign-up trigger's own message behind this one; the only
+  // rule that trigger enforces is the college email domain.
+  if (/database error saving new user/i.test(message)) {
+    return 'Sign-up was refused. Use your college email address.'
+  }
+  if (/profiles_roll_number_key/i.test(message)) {
+    return 'That roll number is already registered. Check it, or ask your teacher.'
+  }
+  if (/permission denied|row-level security/i.test(message)) {
+    return 'You do not have access to that.'
   }
 
   return message || 'Something went wrong.'

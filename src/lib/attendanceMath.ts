@@ -1,4 +1,11 @@
-import { MAX_TARGET, MIN_TARGET, type AttendanceRecord } from '../types'
+import { MAX_TARGET, MIN_TARGET, type Figures } from '../types'
+
+/**
+ * The four outcomes the maths was written around. Present and absent count;
+ * cancelled and holiday are recorded but excluded from both sides, which is
+ * exactly how an excused class is treated.
+ */
+export type CountedStatus = 'present' | 'absent' | 'cancelled' | 'holiday'
 
 export interface AttendanceStats {
   present: number
@@ -39,7 +46,10 @@ export function normalizeTarget(target: number): number {
  * an exact boundary into an off-by-one. Comparisons are done in integer space
  * instead: `present * 100 >= target * total`.
  */
-export function attendanceStats(records: AttendanceRecord[], targetPercentage: number): AttendanceStats {
+export function attendanceStats(
+  records: ReadonlyArray<{ status: CountedStatus }>,
+  targetPercentage: number
+): AttendanceStats {
   let present = 0
   let absent = 0
   let cancelled = 0
@@ -77,6 +87,25 @@ export function attendanceStats(records: AttendanceRecord[], targetPercentage: n
   // Smallest n where (present + n) / (total + n) meets target.
   const comeback = Math.max(1, Math.ceil((target * total - present * 100) / (100 - target)))
   return { present, absent, cancelled, holiday, total, recorded, percentage, bunkable: null, comeback }
+}
+
+/**
+ * The same figures for a course, from the server's counts.
+ *
+ * `held` already leaves out excused classes, so present + absent is `held`
+ * and excused rides along as holiday: counted nowhere, shown for the record.
+ */
+export function figuresStats({ attended, held, excused }: Figures, targetPercentage: number): AttendanceStats {
+  const present = Math.max(0, attended)
+  const absent = Math.max(0, held - present)
+  return attendanceStats(
+    [
+      ...Array.from({ length: present }, () => ({ status: 'present' as const })),
+      ...Array.from({ length: absent }, () => ({ status: 'absent' as const })),
+      ...Array.from({ length: Math.max(0, excused) }, () => ({ status: 'holiday' as const }))
+    ],
+    targetPercentage
+  )
 }
 
 export type SafetyZone = 'neutral' | 'danger' | 'caution' | 'safe'

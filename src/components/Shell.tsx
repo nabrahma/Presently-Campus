@@ -1,17 +1,28 @@
 import { Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { CalendarDays, CircleSlash, House, Layers, Settings2 } from 'lucide-react'
+import { CircleSlash, House, Layers, Settings2, type LucideIcon } from 'lucide-react'
 import { Booting } from './Booting'
 import { cn } from '../lib/cn'
-import { useStore } from '../lib/store'
+import { useSession } from '../lib/session'
+import type { Role } from '../types'
 
-const NAV = [
-  { to: '/', label: 'Today', icon: House, end: true },
-  { to: '/subjects', label: 'Subjects', icon: Layers, end: false },
-  { to: '/calendar', label: 'Calendar', icon: CalendarDays, end: false },
-  { to: '/settings', label: 'Settings', icon: Settings2, end: false }
-]
+interface NavItem {
+  to: string
+  label: string
+  icon: LucideIcon
+  end: boolean
+}
+
+/** Each role gets its own dock; the shell is otherwise the same for both. */
+export const NAV: Record<Role, NavItem[]> = {
+  student: [
+    { to: '/', label: 'Home', icon: House, end: true },
+    { to: '/courses', label: 'Courses', icon: Layers, end: false },
+    { to: '/settings', label: 'Settings', icon: Settings2, end: false }
+  ],
+  teacher: [{ to: '/settings', label: 'Settings', icon: Settings2, end: false }]
+}
 
 /**
  * The persistent frame every screen renders into.
@@ -25,7 +36,8 @@ const NAV = [
  */
 export function Shell() {
   const location = useLocation()
-  const { online, syncing, pendingCount, isDemo } = useStore()
+  const { online, profile } = useSession()
+  const nav = NAV[profile?.role ?? 'student']
   const scrollRef = useRef<HTMLElement>(null)
 
   // A persistent scroll container keeps its offset, so without this, arriving
@@ -59,7 +71,7 @@ export function Shell() {
             'md:flex-col md:items-stretch md:gap-0.5 md:rounded-none md:border-0 md:bg-transparent md:p-0'
           )}
         >
-          {NAV.map(({ to, label, icon: Icon, end }) => (
+          {nav.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -93,7 +105,7 @@ export function Shell() {
         </div>
 
         <span className="mt-auto hidden px-3 md:block">
-          <span className="label">Presently</span>
+          <span className="label">{profile?.role === 'teacher' ? 'Teacher' : 'Student'}</span>
         </span>
       </nav>
 
@@ -105,14 +117,15 @@ export function Shell() {
       */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center justify-between px-5 pt-[max(0.9rem,env(safe-area-inset-top))] pb-3 md:px-8 md:pt-5 md:pb-4">
-          <NavLink to="/" className="flex items-baseline gap-2" aria-label="Presently, go to today">
+          <NavLink to="/" className="flex items-baseline gap-2" aria-label="Presently Campus, go home">
             <span className="font-mono text-[0.95rem] font-medium tracking-[-0.02em] text-ink">
               Presently
             </span>
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span className="label">Campus</span>
           </NavLink>
 
-          <StatusFlag online={online} syncing={syncing} pending={pendingCount} demo={isDemo} />
+          {online ? null : <OfflineFlag />}
         </header>
 
         <main ref={scrollRef} className="scroll-region min-h-0 flex-1 px-5 md:px-8">
@@ -140,42 +153,14 @@ export function Shell() {
   )
 }
 
-function StatusFlag({
-  online,
-  syncing,
-  pending,
-  demo
-}: {
-  online: boolean
-  syncing: boolean
-  pending: number
-  demo: boolean
-}) {
-  if (demo) {
-    return <span className="label rounded-full border border-line px-2.5 py-1.5 text-accent">Demo</span>
-  }
-  if (!online) {
-    return (
-      <span className="label flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1.5">
-        <CircleSlash size={11} strokeWidth={2.2} />
-        Offline
-      </span>
-    )
-  }
-  if (syncing || pending > 0) {
-    return (
-      <span className="label flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1.5">
-        <motion.span
-          aria-hidden
-          className="h-1.5 w-1.5 rounded-full bg-accent"
-          animate={{ opacity: [1, 0.25, 1] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        {syncing ? 'Syncing' : `${pending} queued`}
-      </span>
-    )
-  }
-  return null
+/** Reading still works offline; scanning and marking do not. */
+function OfflineFlag() {
+  return (
+    <span className="label flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1.5">
+      <CircleSlash size={11} strokeWidth={2.2} />
+      Offline
+    </span>
+  )
 }
 
 /** Screen title block: a small caps label above a large heading. */

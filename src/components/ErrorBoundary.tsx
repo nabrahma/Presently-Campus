@@ -10,8 +10,8 @@ interface State {
 
 /**
  * Without this, one bad render anywhere leaves a blank screen and no way
- * forward. Attendance lives in local storage and on the server, so reloading
- * is a genuine recovery rather than a placebo.
+ * forward. Attendance lives on the server, so reloading is a genuine recovery
+ * rather than a placebo.
  */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null }
@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Presently crashed:', error, info.componentStack)
+    console.error('Presently Campus crashed:', error, info.componentStack)
   }
 
   render() {
@@ -33,8 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="w-full max-w-[22rem] text-center">
           <h1 className="readout text-[1.3rem]">Something broke</h1>
           <p className="mt-3 text-[0.85rem] leading-relaxed text-ink-muted">
-            Your attendance is safe — it is stored on this device and in your account. Reloading
-            usually clears this.
+            Attendance is kept on the server, so nothing is lost. Reloading usually clears this.
           </p>
           <button
             type="button"

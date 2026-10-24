@@ -1,41 +1,49 @@
 import { Suspense, lazy, useEffect, type ReactNode } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { Booting } from './components/Booting'
 import { Shell } from './components/Shell'
-import { Today } from './screens/Today'
-import { useStore } from './lib/store'
+import { StudentHome } from './screens/student/Home'
+import { ProfileMissing } from './screens/Onboarding'
+import { useSession } from './lib/session'
+import { useSessionUpdates } from './lib/student'
+import type { Role } from './types'
 
 /*
-  Today is the reason the app gets opened, so it ships in the entry chunk and
-  paints immediately. The rest load when first visited, which keeps the drawer
-  and calendar libraries off the launch path.
+  A student's home is the reason the app gets opened, so it ships in the entry
+  chunk and paints immediately. Everything else loads when first visited.
 */
 const Auth = lazy(() => import('./screens/Auth').then((m) => ({ default: m.Auth })))
 const Onboarding = lazy(() => import('./screens/Onboarding').then((m) => ({ default: m.Onboarding })))
 
 // The tabs' loaders are named so they can be warmed ahead of the first tap.
-const loadSubjects = () => import('./screens/Subjects')
-const loadSubjectDetail = () => import('./screens/SubjectDetail')
-const loadCalendar = () => import('./screens/Calendar')
+const loadStudentCourses = () => import('./screens/student/Courses')
+const loadStudentCourseDetail = () => import('./screens/student/CourseDetail')
+const loadJoinLink = () => import('./screens/student/JoinLink')
 const loadSettings = () => import('./screens/Settings')
 
-const Subjects = lazy(() => loadSubjects().then((m) => ({ default: m.Subjects })))
-const SubjectDetail = lazy(() => loadSubjectDetail().then((m) => ({ default: m.SubjectDetail })))
-const Calendar = lazy(() => loadCalendar().then((m) => ({ default: m.Calendar })))
+const StudentCourses = lazy(() => loadStudentCourses().then((m) => ({ default: m.StudentCourses })))
+const StudentCourseDetail = lazy(() =>
+  loadStudentCourseDetail().then((m) => ({ default: m.StudentCourseDetail }))
+)
+const JoinLink = lazy(() => loadJoinLink().then((m) => ({ default: m.JoinLink })))
 const Settings = lazy(() => loadSettings().then((m) => ({ default: m.Settings })))
+
+const WARM: Record<Role, Array<() => Promise<unknown>>> = {
+  student: [loadStudentCourses, loadStudentCourseDetail, loadSettings],
+  teacher: [loadSettings]
+}
 
 /**
  * Fetches every tab's code once the launch has painted, so the first visit to
  * a tab does not wait on the network after the indicator has already moved.
- * Launch stays as light as before; this runs only when the browser is idle.
  */
-function usePreloadedTabs() {
+function usePreloadedTabs(role: Role) {
   useEffect(() => {
     // Tests render every screen directly; there is nothing to warm there.
     if (import.meta.env.MODE === 'test') return
 
     const warm = () => {
-      for (const load of [loadSubjects, loadCalendar, loadSettings, loadSubjectDetail]) {
+      for (const load of WARM[role]) {
         void load().catch(() => undefined) // a failed prefetch just means a normal load later
       }
     }
@@ -47,34 +55,110 @@ function usePreloadedTabs() {
     }
     const timer = window.setTimeout(warm, 1200)
     return () => window.clearTimeout(timer)
-  }, [])
+  }, [role])
+}
+
+/*
+  A join link opened while signed out has to survive the trip through sign-in,
+  which for a magic link means a new tab. Only join links are remembered.
+*/
+const RETURN_KEY = 'presently-campus:v1:return-to'
+
+function rememberReturn(path: string) {
+  if (!path.startsWith('/join/')) return
+  try {
+    window.localStorage.setItem(RETURN_KEY, path)
+  } catch {
+    // Without storage the student lands on Home and joins by code instead.
+  }
+}
+
+function takeReturn(): string | null {
+  try {
+    const path = window.localStorage.getItem(RETURN_KEY)
+    window.localStorage.removeItem(RETURN_KEY)
+    return path
+  } catch {
+    return null
+  }
 }
 
 /**
- * Access control has three distinct answers, and collapsing any two of them is
- * what previously sent returning users back through setup:
+ * Access control has four distinct answers, and collapsing any two of them is
+ * what once sent returning users back through setup:
  *
- *   still loading    → wait, decide nothing
- *   no session       → sign in
- *   setup unfinished → onboarding
+ *   still loading     → wait, decide nothing
+ *   no session        → sign in
+ *   no profile        → explain, since the role is unknown
+ *   setup unfinished  → onboarding
  */
 function Protected({ children }: { children: ReactNode }) {
-  const { hydrated, userId, profile, cloud, isDemo } = useStore()
+  const location = useLocation()
+  const { hydrated, userId, profile, profileError, signOut } = useSession()
 
   if (!hydrated) return <Booting />
-  if (cloud && !userId && !isDemo) return <Navigate to="/auth" replace />
-  if (!profile?.onboarded) return <Navigate to="/onboarding" replace />
+  if (!userId) {
+    rememberReturn(location.pathname)
+    return <Navigate to="/auth" replace />
+  }
+  if (!profile) return <ProfileMissing message={profileError} onSignOut={() => void signOut()} />
+  if (!profile.onboarded) {
+    rememberReturn(location.pathname)
+    return <Navigate to="/onboarding" replace />
+  }
 
-  return <Warmed>{children}</Warmed>
+  return (
+    <Signed role={profile.role} userId={userId}>
+      {children}
+    </Signed>
+  )
 }
 
 /** Mounted only once someone is inside the app, so sign-in stays lean. */
-function Warmed({ children }: { children: ReactNode }) {
-  usePreloadedTabs()
-  return <>{children}</>
+function Signed({ role, userId, children }: { role: Role; userId: string; children: ReactNode }) {
+  usePreloadedTabs(role)
+  const navigate = useNavigate()
+
+  // Read once, after mount: taking it during render would lose it to the
+  // second render strict mode makes.
+  useEffect(() => {
+    const pending = takeReturn()
+    if (pending && role === 'student' && pending !== window.location.pathname) navigate(pending, { replace: true })
+  }, [navigate, role])
+
+  return (
+    <>
+      {role === 'student' ? <StudentUpdates userId={userId} /> : null}
+      {children}
+    </>
+  )
 }
 
+function StudentUpdates({ userId }: { userId: string }) {
+  useSessionUpdates(userId)
+  return null
+}
+
+const studentRoutes = (
+  <>
+    <Route path="/" element={<StudentHome />} />
+    <Route path="/courses" element={<StudentCourses />} />
+    <Route path="/courses/:id" element={<StudentCourseDetail />} />
+    <Route path="/join/:code" element={<JoinLink />} />
+    <Route path="/settings" element={<Settings />} />
+  </>
+)
+
+const teacherRoutes = (
+  <>
+    <Route path="/" element={<Navigate to="/settings" replace />} />
+    <Route path="/settings" element={<Settings />} />
+  </>
+)
+
 export default function App() {
+  const { profile } = useSession()
+
   return (
     <Routes>
       {/* Screens outside the tabbed shell own their own full-height layout. */}
@@ -86,9 +170,6 @@ export default function App() {
           </Suspense>
         }
       />
-      {/* The previous release linked people straight to these paths. */}
-      <Route path="/auth/sign-in" element={<Navigate to="/auth" replace />} />
-      <Route path="/auth/sign-up" element={<Navigate to="/auth" replace />} />
       <Route
         path="/onboarding"
         element={
@@ -106,11 +187,7 @@ export default function App() {
           </Protected>
         }
       >
-        <Route path="/" element={<Today />} />
-        <Route path="/subjects" element={<Subjects />} />
-        <Route path="/subjects/:id" element={<SubjectDetail />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/settings" element={<Settings />} />
+        {profile?.role === 'teacher' ? teacherRoutes : studentRoutes}
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

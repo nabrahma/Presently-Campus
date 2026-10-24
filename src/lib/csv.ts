@@ -1,5 +1,3 @@
-import type { AppData, AttendanceRecord, Subject } from '../types'
-
 /**
  * Escapes a value for CSV.
  *
@@ -13,37 +11,20 @@ function escapeCell(value: string): string {
   return `"${safe.replace(/"/g, '""')}"`
 }
 
-const HEADERS = ['subject', 'code', 'type', 'date', 'session', 'status'] as const
+type Cell = string | number | null | undefined
 
 /**
- * Records are sorted by date then subject so a diff between two exports is
- * meaningful, and archived subjects are still resolvable by name.
+ * A whole sheet: a header row and data rows, every cell escaped.
+ *
+ * Numbers are written as quoted cells too; spreadsheets still read them as
+ * numbers, and one code path means one escaping rule.
  */
-export function buildCsv(data: Pick<AppData, 'subjects' | 'records'>): string {
-  const byId = new Map<string, Subject>(data.subjects.map((subject) => [subject.id, subject]))
-
-  const sorted = [...data.records].sort((a, b) => {
-    if (a.recordDate !== b.recordDate) return a.recordDate.localeCompare(b.recordDate)
-    const nameA = byId.get(a.subjectId)?.name ?? ''
-    const nameB = byId.get(b.subjectId)?.name ?? ''
-    if (nameA !== nameB) return nameA.localeCompare(nameB)
-    return a.sessionIndex - b.sessionIndex
-  })
-
-  const rows = sorted.map((record: AttendanceRecord) => {
-    const subject = byId.get(record.subjectId)
-    return [
-      escapeCell(subject?.name ?? 'Deleted subject'),
-      escapeCell(subject?.code ?? ''),
-      escapeCell(subject?.subjectType ?? ''),
-      escapeCell(record.recordDate),
-      escapeCell(String(record.sessionIndex)),
-      escapeCell(record.status)
-    ].join(',')
-  })
+export function toCsv(headers: string[], rows: Cell[][]): string {
+  const line = (cells: Cell[]) =>
+    cells.map((cell) => escapeCell(cell === null || cell === undefined ? '' : String(cell))).join(',')
 
   // CRLF is what Excel expects; the join keeps a trailing newline off the file.
-  return [HEADERS.map(escapeCell).join(','), ...rows].join('\r\n')
+  return [line(headers), ...rows.map(line)].join('\r\n')
 }
 
 /**
