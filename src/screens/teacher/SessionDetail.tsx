@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronLeft, Loader2, QrCode } from 'lucide-react'
+import { CalendarCheck, CalendarOff, Loader2, QrCode, Radio, ShieldAlert, UserCheck, UserX } from 'lucide-react'
+import { BackLink } from '../../components/BackLink'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { LoadError } from '../../components/LoadError'
-import { Panel, Readout, SectionHead } from '../../components/Panel'
+import { Panel, SectionHead } from '../../components/Panel'
 import { Sheet } from '../../components/Sheet'
+import { ScreenHead } from '../../components/Shell'
+import { StatCard } from '../../components/StatCard'
 import { courseLabel } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import { formatSessionTime, formatTime } from '../../lib/date'
@@ -74,31 +77,30 @@ export function TeacherSessionDetail() {
 
   return (
     <>
-      <Link
-        to={`/courses/${course.id}`}
-        className="mb-5 inline-flex items-center gap-1.5 font-mono text-[0.65rem] tracking-[0.1em] text-ink-muted uppercase active:opacity-60"
-      >
-        <ChevronLeft size={14} strokeWidth={2.2} />
-        {courseLabel(course)}
-      </Link>
+      <BackLink to={`/courses/${course.id}`} label={courseLabel(course)} />
 
-      <header className="mb-6">
-        <p className={cn('label', open && 'text-accent')}>
-          {open ? 'Live' : session.status === 'cancelled' ? 'Cancelled · counts for no one' : 'Closed'}
-          {session.closedAt && !open ? ` at ${formatTime(session.closedAt)}` : ''}
-        </p>
-        <h1 className="mt-2.5 text-[1.4rem] leading-tight tracking-[-0.01em]">{course.name}</h1>
-        <p className="mt-2 font-mono text-[0.62rem] tracking-[0.08em] text-ink-faint uppercase">
-          {formatSessionTime(session.startedAt)}
-        </p>
-      </header>
+      <ScreenHead
+        icon={open ? <Radio size={26} strokeWidth={2} /> : session.status === 'cancelled' ? <CalendarOff size={26} strokeWidth={2} /> : <CalendarCheck size={26} strokeWidth={2} />}
+        title={course.name}
+        label={formatSessionTime(session.startedAt)}
+      />
+
+      <p
+        className={cn(
+          'chip -mt-3 mb-6 md:-mt-5',
+          open ? 'bg-accent-wash text-accent' : session.status === 'cancelled' ? 'bg-danger-wash text-danger' : 'bg-elevated text-ink-muted'
+        )}
+      >
+        {open ? 'Live' : session.status === 'cancelled' ? 'Cancelled · counts for no one' : 'Closed'}
+        {session.closedAt && !open ? ` at ${formatTime(session.closedAt)}` : ''}
+      </p>
 
       {/* On a phone the primary action takes its own row; three across do not fit. */}
-      <div className="mb-6 grid grid-cols-2 gap-3 md:flex">
+      <div className="mb-6 grid grid-cols-2 gap-2.5 md:flex md:flex-wrap">
         {open ? (
           <>
-            <Link to={`/live/${session.id}`} className="btn-primary col-span-2 md:flex-none">
-              <QrCode size={15} strokeWidth={2.2} /> Show code
+            <Link to={`/live/${session.id}`} className="btn-accent col-span-2 md:min-w-[14rem] md:flex-none">
+              <QrCode size={20} strokeWidth={2.2} /> Show code
             </Link>
             <button type="button" className="btn-secondary md:flex-none" onClick={() => setConfirm('close')}>
               Close session
@@ -117,22 +119,35 @@ export function TeacherSessionDetail() {
         ) : null}
       </div>
 
-      <div className="mb-7 grid grid-cols-3 gap-3">
-        <Panel className="px-4 py-3.5">
-          <Readout label="Present" value={String(groups.present.length)} suffix={`/${groups.expected}`} size="sm" tone="accent" />
-        </Panel>
-        <Panel className="px-4 py-3.5">
-          <Readout label={open ? 'Not yet' : 'Absent'} value={String(groups.absent.length)} size="sm" tone={groups.absent.length > 0 && !open ? 'danger' : 'default'} />
-        </Panel>
-        <Panel className="px-4 py-3.5">
-          <Readout label="Excused" value={String(groups.excused.length)} size="sm" />
-        </Panel>
+      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:gap-4">
+        <StatCard
+          icon={UserCheck}
+          label="Present"
+          value={String(groups.present.length)}
+          suffix={`of ${groups.expected}`}
+          tone="good"
+          className="col-span-2 md:col-span-1"
+        />
+        <StatCard
+          icon={UserX}
+          label={open ? 'Not yet' : 'Absent'}
+          value={String(groups.absent.length)}
+          tone={groups.absent.length > 0 && !open ? 'danger' : 'default'}
+        />
+        <StatCard icon={CalendarOff} label="Excused" value={String(groups.excused.length)} />
       </div>
 
       {groups.flagged.length > 0 && session.status !== 'cancelled' ? (
-        <div className="mb-7">
-          <SectionHead label={`Flagged · ${groups.flagged.length}`} />
-          <p className="pt-2 text-[0.72rem] leading-relaxed text-ink-faint">
+        <Panel className="mb-5 border-warn/40 px-4 pt-4 pb-2 md:px-6">
+          <div className="flex items-center gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-warn-wash text-warn">
+              <ShieldAlert size={22} strokeWidth={2} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <SectionHead label={`Flagged · ${groups.flagged.length}`} />
+            </div>
+          </div>
+          <p className="mt-1 text-[1rem] leading-relaxed text-ink-muted">
             Flags never block a scan. Keep the mark if it looks genuine, or remove it if it was a proxy.
           </p>
           {groups.flagged.map((row) => (
@@ -155,10 +170,10 @@ export function TeacherSessionDetail() {
               }}
             />
           ))}
-        </div>
+        </Panel>
       ) : null}
 
-      <div className="space-y-7 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
+      <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
         <ReportList
           label={open ? 'Not marked yet' : 'Absent'}
           rows={groups.absent}
@@ -166,7 +181,7 @@ export function TeacherSessionDetail() {
           editable={session.status !== 'cancelled'}
           onPick={setMarking}
         />
-        <div className="space-y-7">
+        <div className="space-y-5">
           <ReportList
             label="Present"
             rows={groups.present}
@@ -254,11 +269,11 @@ function ReportList({
   onPick: (row: SessionReportRow) => void
 }) {
   return (
-    <div>
+    <Panel className="px-4 pt-4 pb-2 md:px-6">
       <SectionHead label={`${label} · ${rows.length}`} />
-      {note ? <p className="pt-2 text-[0.72rem] text-ink-faint">{note}</p> : null}
+      {note ? <p className="pb-2 text-[1rem] text-ink-muted">{note}</p> : null}
       {rows.length === 0 ? (
-        <p className="py-4 text-[0.8rem] text-ink-muted">{empty}</p>
+        <p className="pb-4 text-[1rem] text-ink-muted">{empty}</p>
       ) : (
         rows.map((row) => (
           <button
@@ -266,22 +281,24 @@ function ReportList({
             type="button"
             disabled={!editable}
             onClick={() => onPick(row)}
-            className="hover-row flex w-full items-center gap-3 border-b border-line py-3 text-left last:border-b-0 active:opacity-60 disabled:active:opacity-100 md:px-2"
+            className="hover-row -mx-2 flex min-h-16 w-[calc(100%+1rem)] items-center gap-3 rounded-xl border-b border-line px-2 py-3 text-left last:border-b-0 active:opacity-70 disabled:active:opacity-100"
           >
-            <span className="w-[5.5rem] shrink-0 font-mono text-[0.72rem] text-ink-muted tabular-nums">{row.rollNumber}</span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[0.85rem]">{row.fullName}</span>
-              {row.markedAt ? (
-                <span className="mt-1 block truncate font-mono text-[0.6rem] tracking-[0.06em] text-ink-faint">
-                  {row.method === 'qr' ? `Scanned ${formatTime(row.markedAt)}` : `By hand · ${row.reason ?? ''}`}
-                </span>
-              ) : null}
+              <span className="block truncate text-[1.0625rem] font-semibold">{row.fullName}</span>
+              <span className="mt-0.5 block truncate text-[0.95rem] text-ink-muted">
+                <span className="font-mono">{row.rollNumber}</span>
+                {row.markedAt
+                  ? ` · ${row.method === 'qr' ? `Scanned ${formatTime(row.markedAt)}` : `By hand · ${row.reason ?? ''}`}`
+                  : ''}
+              </span>
             </span>
-            {row.flags.length > 0 ? <span className="label text-warn">{row.flags.map(flagLabel).join(' · ')}</span> : null}
+            {row.flags.length > 0 ? (
+              <span className="chip shrink-0 bg-warn-wash text-[0.85rem] text-warn">{row.flags.map(flagLabel).join(' · ')}</span>
+            ) : null}
           </button>
         ))
       )}
-    </div>
+    </Panel>
   )
 }
 
@@ -305,32 +322,22 @@ function FlaggedRow({
   return (
     <div className="border-b border-line py-4 last:border-b-0">
       <div className="flex items-baseline gap-3">
-        <span className="w-[5.5rem] shrink-0 font-mono text-[0.72rem] text-ink-muted tabular-nums">{row.rollNumber}</span>
-        <span className="min-w-0 flex-1 truncate text-[0.88rem]">{row.fullName}</span>
-        {row.markedAt ? <span className="font-mono text-[0.65rem] text-ink-faint">{formatTime(row.markedAt)}</span> : null}
+        <span className="min-w-0 flex-1 truncate text-[1.125rem] font-semibold">{row.fullName}</span>
+        {row.markedAt ? <span className="font-mono text-[0.95rem] text-ink-muted">{formatTime(row.markedAt)}</span> : null}
       </div>
-      <ul className="mt-2 space-y-1">
+      <p className="mt-0.5 font-mono text-[0.95rem] text-ink-muted">{row.rollNumber}</p>
+      <ul className="mt-3 space-y-2">
         {row.flags.map((flag) => (
-          <li key={flag} className="text-[0.72rem] leading-relaxed text-ink-muted">
-            <span className="text-warn">{flagLabel(flag)}.</span> {FLAG_HELP[flag] ?? ''}
+          <li key={flag} className="rounded-xl bg-warn-wash px-3.5 py-2.5 text-[1rem] leading-relaxed text-ink">
+            <span className="font-semibold text-warn">{flagLabel(flag)}.</span> {FLAG_HELP[flag] ?? ''}
           </li>
         ))}
       </ul>
-      <div className="mt-3 flex gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void review('genuine')}
-          className="h-10 flex-1 rounded-full border border-line-strong font-mono text-[0.65rem] tracking-[0.1em] uppercase active:opacity-60 disabled:opacity-40"
-        >
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <button type="button" disabled={busy} onClick={() => void review('genuine')} className="btn-secondary">
           Looks genuine
         </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void review('proxy')}
-          className="h-10 flex-1 rounded-full border border-danger/40 font-mono text-[0.65rem] tracking-[0.1em] text-danger uppercase active:opacity-60 disabled:opacity-40"
-        >
+        <button type="button" disabled={busy} onClick={() => void review('proxy')} className="btn-danger">
           Proxy · mark absent
         </button>
       </div>
@@ -401,8 +408,8 @@ function MarkSheet({
               aria-checked={status === value}
               onClick={() => setStatus(value)}
               className={cn(
-                'h-12 rounded-full border font-mono text-[0.7rem] tracking-[0.08em] uppercase transition-colors',
-                status === value ? 'border-accent bg-accent text-bg' : 'border-line text-ink-muted'
+                'min-h-14 rounded-2xl border-2 text-[1.0625rem] font-semibold transition-colors',
+                status === value ? 'border-ink bg-ink text-surface' : 'border-line text-ink-muted hover:border-line-strong'
               )}
             >
               {label}
@@ -411,7 +418,7 @@ function MarkSheet({
         </div>
 
         <div>
-          <label className="label mb-2.5 block" htmlFor="mark-reason">
+          <label className="mb-2 block text-[1rem] font-medium" htmlFor="mark-reason">
             Reason
           </label>
           <input
@@ -428,13 +435,13 @@ function MarkSheet({
         </div>
 
         {error ? (
-          <p role="alert" className="text-[0.75rem] text-danger">
+          <p role="alert" className="text-[1rem] text-danger">
             {error}
           </p>
         ) : null}
 
         <button type="submit" className="btn-primary w-full" disabled={busy}>
-          {busy ? <Loader2 size={15} className="motion-safe:animate-spin" /> : 'Save mark'}
+          {busy ? <Loader2 size={20} className="motion-safe:animate-spin" /> : 'Save mark'}
         </button>
       </form>
     </Sheet>
