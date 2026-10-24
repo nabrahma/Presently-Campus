@@ -81,9 +81,38 @@ knows whose it is. Data hooks read through `lib/remote.ts`, keyed by user id and
 cleared on sign-out. The phone's key lives in IndexedDB as a non-extractable
 `CryptoKey`, with persistent storage requested.
 
-The interface is Presently's: a black canvas, one green accent, mono numerals,
-a bottom dock on phones and a side rail on wide screens, sheets that are drawers
-on touch and dialogs with a pointer, colour never carrying meaning alone.
+## Interface
+
+The people using this include teachers who did not grow up with phone apps, so
+the interface is built to be read without effort and operated without
+learning:
+
+- **Two themes, chosen not imposed.** A light theme (white cards on a warm grey
+  page, black for the main action, orange for the brand and live states) and a
+  dark theme with its own values. Automatic follows the device. Body text clears
+  7:1 contrast and secondary text 4.5:1 in both. All colours are tokens in
+  `src/index.css`; nothing else names a colour.
+- **Text that reads at arm's length.** 17px body text, plain sentence-case
+  labels instead of small tracked capitals, mono only for numbers so columns
+  line up. Settings offers three text sizes; every size is in rem, so the
+  root font size scales the whole app. Pinch-zoom is allowed.
+- **Targets for a finger, not a cursor.** Buttons and fields are 56px tall and
+  rows at least 64px. Every icon has its name beside it, in the navigation and
+  on buttons; a bare icon is a guess for anyone who has not learnt it. Sheets
+  have a visible close button as well as the drag.
+- **Colour that means what people expect.** Green on target, amber close, red
+  below, always next to words. Orange is the brand and "live", never a verdict.
+- **One layout, three sizes.** A tab bar with labelled icons on a phone; a
+  labelled sidebar and a white frame on the grey page from tablet width, as in
+  a desktop app; two columns where a screen has room. The same links restyle
+  rather than being duplicated.
+- **Headline figures as cards.** A large number and its picture (a segmented
+  meter, a ring) in a recessed area, with an icon and the name of what is
+  counted underneath, so the eye lands on the number and the words confirm it.
+
+The appearance choice lives in the browser's storage, because it belongs to the
+device rather than the account, and `index.html` applies it before the first
+paint so the app never opens in the wrong theme.
 
 ## Testing
 
