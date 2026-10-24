@@ -55,7 +55,8 @@ export function toProfile(row: Row): Profile {
     role,
     fullName,
     rollNumber,
-    onboarded: fullName !== '' && (role === 'teacher' || rollNumber !== null)
+    onboarded: fullName !== '' && (role === 'teacher' || rollNumber !== null),
+    isDev: row.is_dev === true
   }
 }
 

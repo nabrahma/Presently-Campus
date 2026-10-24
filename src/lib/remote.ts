@@ -20,7 +20,9 @@ interface Entry<T> {
   fetchedAt: number
 }
 
-const STORAGE_PREFIX = 'presently-campus:v1:'
+// Its own prefix, so clearing the cache on sign-out or a view switch leaves
+// device settings such as the theme and text size alone.
+const STORAGE_PREFIX = 'presently-campus:v1:data:'
 /** Remounting a screen within this window reuses the answer it just got. */
 const FRESH_MS = 5_000
 
