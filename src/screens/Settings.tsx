@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Check, LogOut, Smartphone } from 'lucide-react'
+import { Check, LogOut, Monitor, Moon, Smartphone, Sun, type LucideIcon } from 'lucide-react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ActionRow, DataRow, Panel, SectionHead } from '../components/Panel'
 import { PrivacyNotice } from '../components/PrivacyNotice'
 import { PhonePanel } from '../components/PhonePanel'
 import { ScreenHead } from '../components/Shell'
+import { useAppearance, type TextSize, type ThemeChoice } from '../lib/appearance'
 import { usePhoneStatus } from '../lib/devices'
 import { cn } from '../lib/cn'
 import { useSession } from '../lib/session'
@@ -46,14 +47,17 @@ export function Settings({ children }: { children?: ReactNode }) {
     <>
       <ScreenHead label={email ?? 'Account'} title="Settings" />
 
-      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
-        <div className="space-y-7">
-          <Panel className="px-5 py-5">
-            <p className="label mb-4">{student ? 'Student' : 'Teacher'}</p>
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="space-y-5">
+          <Panel className="p-5 md:p-6">
+            <h2 className="title text-[1.25rem]">Your details</h2>
+            <p className="mt-1 text-[1rem] text-ink-muted">
+              {student ? 'As your teachers see you on the register.' : 'As your students see you on each course.'}
+            </p>
 
-            <div className="space-y-4">
+            <div className="mt-5 space-y-4">
               <div>
-                <label className="label mb-2.5 block" htmlFor="settings-name">
+                <label className="mb-2 block text-[1rem] font-medium" htmlFor="settings-name">
                   Full name
                 </label>
                 <input
@@ -68,7 +72,7 @@ export function Settings({ children }: { children?: ReactNode }) {
 
               {student ? (
                 <div>
-                  <label className="label mb-2.5 block" htmlFor="settings-roll">
+                  <label className="mb-2 block text-[1rem] font-medium" htmlFor="settings-roll">
                     Roll number
                   </label>
                   <input
@@ -85,7 +89,7 @@ export function Settings({ children }: { children?: ReactNode }) {
               ) : null}
 
               {!valid ? (
-                <p role="alert" className="text-[0.75rem] text-danger">
+                <p role="alert" className="text-[1rem] text-danger">
                   {student ? 'Name and roll number are both needed.' : 'Your name is needed.'}
                 </p>
               ) : null}
@@ -96,21 +100,23 @@ export function Settings({ children }: { children?: ReactNode }) {
                 disabled={!valid || !dirty || saving}
                 onClick={() => void save()}
               >
-                {saving ? 'Saving' : dirty ? 'Save' : 'Saved'}
+                {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
               </button>
             </div>
           </Panel>
 
           {children}
+
+          <AppearancePanel />
         </div>
 
-        <div className="mt-7 space-y-7 lg:mt-0">
-          <div>
+        <div className="mt-5 space-y-5 lg:mt-0">
+          <Panel className="px-5 pt-4 pb-2 md:px-6">
             <SectionHead label="App" />
 
             {canInstall ? (
               <ActionRow
-                icon={<Smartphone size={16} strokeWidth={1.9} />}
+                icon={<Smartphone size={20} strokeWidth={1.9} />}
                 title="Install app"
                 detail={
                   student
@@ -121,23 +127,23 @@ export function Settings({ children }: { children?: ReactNode }) {
               />
             ) : installed ? (
               <DataRow>
-                <span className="shrink-0 text-accent">
-                  <Check size={16} strokeWidth={1.9} />
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-good-wash text-good">
+                  <Check size={20} strokeWidth={2} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.85rem]">Installed</p>
-                  <p className="label mt-1.5">Running as an app</p>
+                  <p className="text-[1.0625rem] font-medium">Installed</p>
+                  <p className="mt-0.5 text-[0.95rem] text-ink-muted">Running as an app</p>
                 </div>
               </DataRow>
             ) : null}
 
             <ActionRow
-              icon={<LogOut size={16} strokeWidth={1.9} />}
+              icon={<LogOut size={20} strokeWidth={1.9} />}
               title="Sign out"
               detail="Also clears this device's cached copy"
               onClick={() => setConfirmSignOut(true)}
             />
-          </div>
+          </Panel>
 
           {profile ? <PrivacyNotice role={profile.role} /> : null}
         </div>
@@ -159,6 +165,73 @@ export function Settings({ children }: { children?: ReactNode }) {
         }}
       />
     </>
+  )
+}
+
+const THEMES: Array<{ value: ThemeChoice; label: string; icon: LucideIcon }> = [
+  { value: 'system', label: 'Automatic', icon: Monitor },
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon }
+]
+
+const SIZES: Array<{ value: TextSize; label: string; sample: string }> = [
+  { value: 'standard', label: 'Standard', sample: 'text-[1rem]' },
+  { value: 'large', label: 'Large', sample: 'text-[1.15rem]' },
+  { value: 'largest', label: 'Largest', sample: 'text-[1.3rem]' }
+]
+
+/** Light or dark, and how large the text reads. Saved on this device only. */
+function AppearancePanel() {
+  const [appearance, setAppearance] = useAppearance()
+
+  return (
+    <Panel className="p-5 md:p-6">
+      <h2 className="title text-[1.25rem]">Appearance</h2>
+      <p className="mt-1 text-[1rem] text-ink-muted">Saved on this device. Automatic follows the device’s own setting.</p>
+
+      <p className="mt-5 mb-2 text-[1rem] font-medium" id="theme-label">
+        Colours
+      </p>
+      <div role="radiogroup" aria-labelledby="theme-label" className="grid grid-cols-3 gap-2">
+        {THEMES.map(({ value, label, icon: Icon }) => (
+          <Choice key={value} selected={appearance.theme === value} onSelect={() => setAppearance({ theme: value })}>
+            <Icon size={22} strokeWidth={1.9} />
+            {label}
+          </Choice>
+        ))}
+      </div>
+
+      <p className="mt-5 mb-2 text-[1rem] font-medium" id="text-label">
+        Text size
+      </p>
+      <div role="radiogroup" aria-labelledby="text-label" className="grid grid-cols-3 gap-2">
+        {SIZES.map(({ value, label, sample }) => (
+          <Choice key={value} selected={appearance.text === value} onSelect={() => setAppearance({ text: value })}>
+            <span aria-hidden className={cn('grid h-7 place-items-center leading-none font-semibold', sample)}>
+              Aa
+            </span>
+            {label}
+          </Choice>
+        ))}
+      </div>
+    </Panel>
+  )
+}
+
+function Choice({ selected, onSelect, children }: { selected: boolean; onSelect: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={cn(
+        'flex min-h-22 flex-col items-center justify-center gap-2 rounded-2xl border-2 px-2 text-[0.95rem] font-medium transition-colors',
+        selected ? 'border-ink bg-elevated text-ink' : 'border-line text-ink-muted hover:border-line-strong hover:text-ink'
+      )}
+    >
+      {children}
+    </button>
   )
 }
 

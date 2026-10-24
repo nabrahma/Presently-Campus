@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, Loader2, Smartphone } from 'lucide-react'
 import { Booting } from '../components/Booting'
+import { Frame } from '../components/Frame'
+import { Logo } from '../components/Logo'
 import { PrivacyNotice } from '../components/PrivacyNotice'
 import { registerThisPhone } from '../lib/devices'
 import { useSession } from '../lib/session'
@@ -61,26 +63,22 @@ export function Onboarding() {
   }
 
   return (
-    <div className="scroll-region h-full">
-      <form
-        onSubmit={submit}
-        noValidate
-        className="mx-auto flex min-h-full w-full max-w-[28rem] flex-col justify-center px-6"
-        style={{
-          paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
-          paddingBottom: 'max(2rem, env(safe-area-inset-bottom))'
-        }}
-      >
-        <div className="flex items-baseline gap-2">
-          <span className="font-mono text-[0.9rem] tracking-[-0.02em]">Presently</span>
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
-          <span className="label">{student ? 'Student' : 'Teacher'}</span>
+    <Frame>
+      <form onSubmit={submit} noValidate>
+        <div className="flex items-center gap-3">
+          <Logo className="size-12" />
+          <div>
+            <p className="title text-[1.125rem]">Presently</p>
+            <p className="text-[0.95rem] text-ink-muted">{student ? 'Student account' : 'Teacher account'}</p>
+          </div>
         </div>
 
-        <h1 className="mt-8 text-[1.6rem] leading-tight tracking-[-0.02em]">
+        <Steps current={1} total={student ? 2 : 1} />
+
+        <h1 className="title mt-3 text-[2rem]">
           {student ? 'How your teachers see you' : 'How your students see you'}
         </h1>
-        <p className="mt-3 text-[0.86rem] leading-relaxed text-ink-muted">
+        <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">
           {student
             ? 'Use your name and roll number exactly as they appear on the college register.'
             : 'Your name appears on each course you create.'}
@@ -88,7 +86,7 @@ export function Onboarding() {
 
         <div className="mt-8 space-y-5">
           <div>
-            <label className="label mb-2.5 block" htmlFor="onboard-name">
+            <label className="mb-2 block text-[1rem] font-medium" htmlFor="onboard-name">
               Full name
             </label>
             <input
@@ -103,7 +101,7 @@ export function Onboarding() {
 
           {student ? (
             <div>
-              <label className="label mb-2.5 block" htmlFor="onboard-roll">
+              <label className="mb-2 block text-[1rem] font-medium" htmlFor="onboard-roll">
                 Roll number
               </label>
               <input
@@ -124,7 +122,7 @@ export function Onboarding() {
           {error ? (
             <p
               role="alert"
-              className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[0.78rem] text-danger"
+              className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[1rem] text-danger"
             >
               {error}
             </p>
@@ -133,15 +131,32 @@ export function Onboarding() {
 
         <button type="submit" className="btn-primary mt-8 w-full" disabled={busy}>
           {busy ? (
-            <Loader2 size={15} className="motion-safe:animate-spin" />
+            <Loader2 size={20} className="motion-safe:animate-spin" />
           ) : (
             <>
               Continue
-              <ArrowRight size={14} strokeWidth={2.2} />
+              <ArrowRight size={18} strokeWidth={2.2} />
             </>
           )}
         </button>
       </form>
+    </Frame>
+  )
+}
+
+/** "Step 1 of 2", in words and as a bar, so setup never feels open-ended. */
+function Steps({ current, total }: { current: number; total: number }) {
+  if (total < 2) return <div className="mt-9" />
+  return (
+    <div className="mt-9">
+      <p className="text-[0.95rem] font-medium text-ink-muted">
+        Step {current} of {total}
+      </p>
+      <div className="mt-2 flex gap-1.5" aria-hidden>
+        {Array.from({ length: total }, (_, index) => (
+          <span key={index} className={index < current ? 'h-1.5 flex-1 rounded-full bg-accent-bright' : 'h-1.5 flex-1 rounded-full bg-line'} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -169,55 +184,51 @@ function RegisterPhone({ userId, onDone }: { userId: string; onDone: () => void 
   }
 
   return (
-    <div className="scroll-region h-full">
+    <Frame>
+      <Steps current={2} total={2} />
+
       <div
-        className="mx-auto flex min-h-full w-full max-w-[28rem] flex-col justify-center px-6"
-        style={{
-          paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
-          paddingBottom: 'max(2rem, env(safe-area-inset-bottom))'
-        }}
+        className={
+          outcome?.ok
+            ? 'mt-7 grid size-16 place-items-center rounded-2xl bg-good-wash text-good'
+            : 'mt-7 grid size-16 place-items-center rounded-2xl bg-accent-wash text-accent'
+        }
       >
-        <div className="grid h-11 w-11 place-items-center rounded-full border border-line text-accent">
-          {outcome?.ok ? <Check size={19} strokeWidth={2} /> : <Smartphone size={19} strokeWidth={1.8} />}
-        </div>
-
-        <h1 className="mt-7 text-[1.6rem] leading-tight tracking-[-0.02em]">
-          {outcome?.ok ? 'This phone is yours' : 'Register this phone'}
-        </h1>
-        <p className="mt-3 text-[0.86rem] leading-relaxed text-ink-muted">
-          {outcome
-            ? outcome.message
-            : 'Attendance can only be marked from one phone, and this registers it. Do this on the phone you will scan with. A new phone can mark attendance after 12 hours, or sooner if a teacher approves it.'}
-        </p>
-
-        {outcome && !outcome.ok ? null : outcome ? (
-          <button type="button" className="btn-primary mt-8 w-full" onClick={onDone}>
-            Continue
-            <ArrowRight size={14} strokeWidth={2.2} />
-          </button>
-        ) : (
-          <button type="button" className="btn-primary mt-8 w-full" disabled={busy} onClick={() => void register()}>
-            {busy ? <Loader2 size={15} className="motion-safe:animate-spin" /> : 'Register this phone'}
-          </button>
-        )}
-
-        {outcome && !outcome.ok ? (
-          <button type="button" className="btn-primary mt-8 w-full" disabled={busy} onClick={() => void register()}>
-            Try again
-          </button>
-        ) : null}
-
-        {outcome?.ok ? null : (
-          <button
-            type="button"
-            className="mx-auto mt-4 block font-mono text-[0.65rem] tracking-[0.08em] text-ink-muted uppercase active:opacity-60"
-            onClick={onDone}
-          >
-            Not on my phone · do it later
-          </button>
-        )}
+        {outcome?.ok ? <Check size={30} strokeWidth={2} /> : <Smartphone size={30} strokeWidth={1.8} />}
       </div>
-    </div>
+
+      <h1 className="title mt-6 text-[2rem]">
+        {outcome?.ok ? 'This phone is yours' : 'Register this phone'}
+      </h1>
+      <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">
+        {outcome
+          ? outcome.message
+          : 'Attendance can only be marked from one phone, and this registers it. Do this on the phone you will scan with. A new phone can mark attendance after 12 hours, or sooner if a teacher approves it.'}
+      </p>
+
+      {outcome && !outcome.ok ? null : outcome ? (
+        <button type="button" className="btn-primary mt-8 w-full" onClick={onDone}>
+          Continue
+          <ArrowRight size={18} strokeWidth={2.2} />
+        </button>
+      ) : (
+        <button type="button" className="btn-primary mt-8 w-full" disabled={busy} onClick={() => void register()}>
+          {busy ? <Loader2 size={20} className="motion-safe:animate-spin" /> : 'Register this phone'}
+        </button>
+      )}
+
+      {outcome && !outcome.ok ? (
+        <button type="button" className="btn-primary mt-8 w-full" disabled={busy} onClick={() => void register()}>
+          Try again
+        </button>
+      ) : null}
+
+      {outcome?.ok ? null : (
+        <button type="button" className="btn-secondary mt-3 w-full" onClick={onDone}>
+          Not on my phone · do it later
+        </button>
+      )}
+    </Frame>
   )
 }
 
@@ -225,9 +236,9 @@ function RegisterPhone({ userId, onDone }: { userId: string; onDone: () => void 
 export function ProfileMissing({ message, onSignOut }: { message: string | null; onSignOut: () => void }) {
   return (
     <div className="flex h-full items-center justify-center px-6">
-      <div className="w-full max-w-[22rem] text-center">
-        <h1 className="readout text-[1.3rem]">Could not load your account</h1>
-        <p className="mt-3 text-[0.85rem] leading-relaxed text-ink-muted">
+      <div className="w-full max-w-[26rem] text-center">
+        <h1 className="title text-[1.75rem]">Could not load your account</h1>
+        <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">
           {message ?? 'Check your connection and try again.'}
         </p>
         <button type="button" className="btn-primary mt-7 w-full" onClick={() => window.location.reload()}>

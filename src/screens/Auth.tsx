@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ArrowRight, Loader2, MailCheck } from 'lucide-react'
+import { ArrowRight, BarChart3, Loader2, MailCheck, QrCode, ScanLine } from 'lucide-react'
 import { Booting } from '../components/Booting'
+import { Frame } from '../components/Frame'
+import { Logo } from '../components/Logo'
 import { cn } from '../lib/cn'
 import { useSession } from '../lib/session'
 import { describeError, supabase } from '../lib/supabaseClient'
@@ -109,13 +111,13 @@ export function Auth() {
   if (sentTo) {
     return (
       <Frame>
-        <div className="grid h-11 w-11 place-items-center rounded-full border border-line text-accent">
-          <MailCheck size={19} strokeWidth={1.8} />
+        <div className="grid size-16 place-items-center rounded-2xl bg-good-wash text-good">
+          <MailCheck size={30} strokeWidth={1.8} />
         </div>
-        <h1 className="readout mt-7 text-[1.6rem] leading-tight">Check your inbox</h1>
-        <p className="mt-3 text-[0.88rem] leading-relaxed text-ink-muted">
-          A sign-in link is on its way to <span className="text-ink">{sentTo}</span>. Open it in this
-          browser to continue.
+        <h1 className="title mt-7 text-[2rem]">Check your email</h1>
+        <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">
+          We sent a sign-in link to <span className="font-semibold text-ink">{sentTo}</span>. Open the
+          email on this device and tap the link to continue.
         </p>
         <button
           type="button"
@@ -126,32 +128,32 @@ export function Auth() {
             setEmail(sentTo)
           }}
         >
-          {cooldown > 0 ? `Retry in ${cooldown}s` : 'Use a different email'}
+          {cooldown > 0 ? `You can try again in ${cooldown} seconds` : 'Use a different email'}
         </button>
       </Frame>
     )
   }
 
   return (
-    <Frame>
-      <div className="flex items-baseline gap-2">
-        <span className="font-mono text-[0.95rem] tracking-[-0.02em]">Presently</span>
-        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
+    <Frame aside={<HowItWorks />}>
+      <div className="flex items-center gap-3">
+        <Logo className="size-12" />
+        <div>
+          <p className="title text-[1.125rem]">Presently</p>
+          <p className="text-[0.95rem] text-ink-muted">Campus attendance</p>
+        </div>
       </div>
 
-      <h1 className="mt-8 text-[1.75rem] leading-[1.15] tracking-[-0.02em]">
-        Scan in.
-        <br />
-        See where you stand.
+      <h1 className="title mt-9 text-[2rem] md:text-[2.25rem]">
+        {mode === 'signIn' ? 'Welcome back' : 'Create your account'}
       </h1>
-      <p className="mt-4 text-[0.88rem] leading-relaxed text-ink-muted">
-        Class attendance by QR code, with every subject&rsquo;s margin worked out for you. Sign in
-        with your college email; teachers are recognised automatically.
+      <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">
+        Sign in with your college email. Teachers are recognised automatically.
       </p>
 
       {cloud ? (
         <>
-          <div role="tablist" aria-label="Account action" className="mt-8 flex gap-2">
+          <div role="tablist" aria-label="Account action" className="inset mt-8 flex gap-1 rounded-full p-1.5">
             {(
               [
                 ['signIn', 'Sign in'],
@@ -168,8 +170,8 @@ export function Auth() {
                   setError('')
                 }}
                 className={cn(
-                  'rounded-full border px-4 py-2.5 font-mono text-[0.65rem] tracking-[0.1em] uppercase transition-colors',
-                  mode === key ? 'border-accent bg-accent text-bg' : 'border-line text-ink-muted'
+                  'min-h-12 flex-1 rounded-full px-4 text-[1rem] font-semibold transition-colors',
+                  mode === key ? 'bg-surface text-ink shadow-(--shadow-card)' : 'text-ink-muted hover:text-ink'
                 )}
               >
                 {label}
@@ -177,9 +179,9 @@ export function Auth() {
             ))}
           </div>
 
-          <form onSubmit={submit} noValidate className="mt-6 space-y-4">
+          <form onSubmit={submit} noValidate className="mt-6 space-y-5">
             <div>
-              <label className="label mb-2.5 block" htmlFor="auth-email">
+              <label className="mb-2 block text-[1rem] font-medium" htmlFor="auth-email">
                 College email
               </label>
               <input
@@ -202,7 +204,7 @@ export function Auth() {
 
             {method === 'password' ? (
               <div>
-                <label className="label mb-2.5 block" htmlFor="auth-password">
+                <label className="mb-2 block text-[1rem] font-medium" htmlFor="auth-password">
                   Password
                 </label>
                 <input
@@ -223,21 +225,18 @@ export function Auth() {
             ) : null}
 
             {error ? (
-              <p
-                role="alert"
-                className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[0.78rem] text-danger"
-              >
+              <p role="alert" className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[1rem] text-danger">
                 {error}
               </p>
             ) : null}
 
             <button type="submit" className="btn-primary w-full" disabled={busy}>
               {busy ? (
-                <Loader2 size={15} className="motion-safe:animate-spin" />
+                <Loader2 size={20} className="motion-safe:animate-spin" />
               ) : (
                 <>
                   {method === 'link' ? 'Send link' : mode === 'signUp' ? 'Create account' : 'Sign in'}
-                  <ArrowRight size={14} strokeWidth={2.2} />
+                  <ArrowRight size={18} strokeWidth={2.2} />
                 </>
               )}
             </button>
@@ -245,7 +244,7 @@ export function Auth() {
 
           <button
             type="button"
-            className="mx-auto mt-4 block font-mono text-[0.65rem] tracking-[0.08em] text-ink-muted uppercase active:opacity-60"
+            className="mx-auto mt-3 flex min-h-12 items-center px-3 text-[1rem] font-medium underline decoration-line-strong underline-offset-4 hover:decoration-ink"
             onClick={() => {
               setMethod(method === 'link' ? 'password' : 'link')
               setError('')
@@ -255,33 +254,56 @@ export function Auth() {
           </button>
         </>
       ) : (
-        <p className="mt-8 rounded-2xl border border-line px-4 py-4 text-[0.8rem] leading-relaxed text-ink-muted">
-          This build has no Supabase credentials. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-          for the Presently Campus project and rebuild.
+        <p className="inset mt-8 px-5 py-4 text-[1rem] leading-relaxed text-ink-muted">
+          This build has no Supabase credentials. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for the
+          Presently Campus project and rebuild.
         </p>
       )}
 
-      <p className="mt-8 text-center font-mono text-[0.6rem] tracking-[0.08em] text-ink-faint uppercase">
-        One account per student · one phone per account
-      </p>
+      <p className="mt-6 text-center text-[0.95rem] text-ink-muted">One account per student · one phone per account</p>
     </Frame>
   )
 }
 
-/** Auth sits outside the app shell, so it owns its own scroll region. */
-function Frame({ children }: { children: ReactNode }) {
+const STEPS = [
+  {
+    icon: QrCode,
+    title: 'The teacher shows a code',
+    text: 'It changes every ten seconds, so a photo sent to a friend outside is useless.'
+  },
+  {
+    icon: ScanLine,
+    title: 'Students scan it',
+    text: 'From their own registered phone, inside this app. Marked in about a second.'
+  },
+  {
+    icon: BarChart3,
+    title: 'Everyone sees where they stand',
+    text: 'Each subject’s percentage, and how many classes can still be missed.'
+  }
+]
+
+/** The wide-screen companion to the sign-in form: what the app does, in three steps. */
+function HowItWorks() {
   return (
-    <div className="scroll-region h-full">
-      <div
-        className="mx-auto flex min-h-full w-full max-w-[26rem] flex-col justify-center px-6"
-        style={{
-          paddingTop: 'max(2rem, env(safe-area-inset-top))',
-          paddingBottom: 'max(2rem, env(safe-area-inset-bottom))'
-        }}
-      >
-        {children}
-      </div>
+    <div className="dot-grid flex h-full flex-col justify-center rounded-[1.75rem] border border-line bg-elevated/60 p-10">
+      <p className="chip w-fit bg-warn-wash text-warn">How it works</p>
+      <h2 className="title mt-5 text-[1.75rem]">Attendance in one scan</h2>
+      <ol className="mt-8 space-y-4">
+        {STEPS.map(({ icon: Icon, title, text }, index) => (
+          <li key={title} className="panel flex gap-4 p-5">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink text-surface">
+              <Icon size={22} strokeWidth={2} />
+            </span>
+            <span>
+              <span className="block text-[1.0625rem] font-semibold">
+                {index + 1}. {title}
+              </span>
+              <span className="mt-1 block text-[1rem] leading-relaxed text-ink-muted">{text}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }
-
