@@ -35,7 +35,7 @@ export function JoinLink() {
   return (
     <div className="pt-6">
       <Empty
-        icon={<TriangleAlert size={18} strokeWidth={1.8} />}
+        icon={<TriangleAlert size={26} strokeWidth={1.8} />}
         title="Could not join"
         text={result.error}
         action={
