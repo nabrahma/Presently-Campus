@@ -411,3 +411,27 @@ export async function decidePhone(userId: string, deviceId: string, approve: boo
   await run((db) => db.rpc(approve ? 'approve_device' : 'reject_device', { p_device: deviceId }))
   await refreshAll(userId)
 }
+
+/* -------------------------------------------------------------------------- */
+/* Flag outcomes                                                               */
+/* -------------------------------------------------------------------------- */
+
+export interface FlagOutcome {
+  flag: string
+  kept: number
+  removed: number
+  pending: number
+}
+
+export function useFlagOutcomes(courseId: string | undefined) {
+  const userId = useUserId()
+  return useRemote(courseId ? `${teacherPrefix(userId)}:flags:${courseId}` : null, async () => {
+    const rows = (await run((db) => db.rpc('flag_outcomes', { p_course: courseId }))) as Row[]
+    return rows.map((row) => ({
+      flag: String(row.flag),
+      kept: number(row.kept),
+      removed: number(row.removed),
+      pending: number(row.pending)
+    }))
+  })
+}

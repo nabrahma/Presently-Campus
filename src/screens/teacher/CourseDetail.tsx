@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Archive, ArchiveRestore, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Pencil, Play, QrCode as QrIcon, Radio, Rows3, Users } from 'lucide-react'
+import { Archive, ArchiveRestore, ChevronLeft, ChevronRight, Download, FileSpreadsheet, LineChart, Pencil, Play, QrCode as QrIcon, Radio, Rows3, Users } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { CourseForm } from '../../components/CourseForm'
@@ -137,15 +137,20 @@ export function TeacherCourseDetail() {
         </div>
       </header>
 
-      {open ? (
-        <Link to={projectorPath(open.sessionId)} className="btn-primary mb-6 w-full md:w-auto">
-          <Radio size={15} strokeWidth={2.2} /> Open live session · {open.present}/{open.expected - open.excused}
+      <div className="mb-6 flex flex-wrap gap-3">
+        {open ? (
+          <Link to={projectorPath(open.sessionId)} className="btn-primary flex-1 md:flex-none">
+            <Radio size={15} strokeWidth={2.2} /> Open live session · {open.present}/{open.expected - open.excused}
+          </Link>
+        ) : course.archived ? null : (
+          <button type="button" className="btn-primary flex-1 md:flex-none" disabled={starting} onClick={() => void start()}>
+            <Play size={14} strokeWidth={2.4} /> {starting ? 'Starting' : 'Start session'}
+          </button>
+        )}
+        <Link to={`/courses/${course.id}/analysis`} className="btn-secondary flex-1 md:flex-none">
+          <LineChart size={14} strokeWidth={2.2} /> Analysis
         </Link>
-      ) : course.archived ? null : (
-        <button type="button" className="btn-primary mb-6 w-full md:w-auto" disabled={starting} onClick={() => void start()}>
-          <Play size={14} strokeWidth={2.4} /> {starting ? 'Starting' : 'Start session'}
-        </button>
-      )}
+      </div>
 
       <div className="mb-7 grid grid-cols-4 gap-3">
         <Panel className="px-4 py-3.5">

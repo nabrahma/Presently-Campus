@@ -28,6 +28,7 @@ const loadTeacherSession = () => import('./screens/teacher/SessionDetail')
 const loadTeacherLive = () => import('./screens/teacher/Live')
 const loadProjector = () => import('./screens/teacher/Projector')
 const loadApprovals = () => import('./screens/teacher/Approvals')
+const loadAnalysis = () => import('./screens/teacher/Analysis')
 
 const StudentCourses = lazy(() => loadStudentCourses().then((m) => ({ default: m.StudentCourses })))
 const StudentCourseDetail = lazy(() =>
@@ -47,6 +48,7 @@ const TeacherSessionDetail = lazy(() =>
 const TeacherLive = lazy(() => loadTeacherLive().then((m) => ({ default: m.TeacherLive })))
 const Projector = lazy(() => loadProjector().then((m) => ({ default: m.Projector })))
 const TeacherApprovals = lazy(() => loadApprovals().then((m) => ({ default: m.TeacherApprovals })))
+const TeacherAnalysis = lazy(() => loadAnalysis().then((m) => ({ default: m.TeacherAnalysis })))
 
 const WARM: Record<Role, Array<() => Promise<unknown>>> = {
   student: [loadScan, loadStudentCourses, loadStudentCourseDetail, loadSettings],
@@ -174,6 +176,7 @@ const teacherRoutes = (
   <>
     <Route path="/" element={<TeacherCourses />} />
     <Route path="/courses/:id" element={<TeacherCourseDetail />} />
+    <Route path="/courses/:id/analysis" element={<TeacherAnalysis />} />
     <Route path="/sessions/:id" element={<TeacherSessionDetail />} />
     <Route path="/live" element={<TeacherLive />} />
     <Route path="/approvals" element={<TeacherApprovals />} />

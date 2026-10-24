@@ -296,3 +296,43 @@ describe('describeAgent', () => {
     expect(describeAgent(null)).toBe('Unknown device')
   })
 })
+
+describe('analysis', () => {
+  it('lists who will not make the target by the cutoff, and charts each class', async () => {
+    const world = teacherWorld()
+    const weeksAgo = (weeks: number, hour: number) => {
+      const date = new Date(Date.now() - weeks * 7 * 86_400_000)
+      date.setHours(hour, 0, 0, 0)
+      return date.toISOString()
+    }
+    setFixtures({
+      ...world,
+      rpc: {
+        ...world.rpc,
+        flag_outcomes: () => [{ flag: 'shared_connection', kept: 1, removed: 2, pending: 0 }],
+        course_sessions_summary: () =>
+          [1, 2, 3].map((weeks) => ({
+            session_id: `w${weeks}`,
+            started_at: weeksAgo(weeks, 10),
+            closed_at: weeksAgo(weeks, 11),
+            status: 'closed',
+            note: null,
+            expected: 3,
+            present: 2,
+            excused: 0,
+            flagged: 0
+          }))
+      }
+    })
+    mount('/courses/course-1/analysis')
+
+    // Bilal, 6 of 10, is below; Asha, 7 of 10, too; Chen, 9 of 10, is fine.
+    expect(await screen.findByText(/needs attention by .* · 2/i)).toBeTruthy()
+    expect(screen.getByText('Bilal Khan')).toBeTruthy()
+    expect(screen.queryByText('Chen Li')).toBeNull()
+
+    // The heatmap's one cell: Mondays or whichever weekday, at 10:00, a third absent.
+    expect(screen.getByRole('button', { name: /10:00 · 3 classes · 33% absent \(3 of 9\)/ })).toBeTruthy()
+    expect(screen.getByText('Proxies removed')).toBeTruthy()
+  })
+})

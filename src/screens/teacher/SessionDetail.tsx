@@ -93,24 +93,25 @@ export function TeacherSessionDetail() {
         </p>
       </header>
 
-      <div className="mb-6 flex flex-wrap gap-3">
+      {/* On a phone the primary action takes its own row; three across do not fit. */}
+      <div className="mb-6 grid grid-cols-2 gap-3 md:flex">
         {open ? (
           <>
-            <Link to={`/live/${session.id}`} className="btn-primary flex-1 md:flex-none">
+            <Link to={`/live/${session.id}`} className="btn-primary col-span-2 md:flex-none">
               <QrCode size={15} strokeWidth={2.2} /> Show code
             </Link>
-            <button type="button" className="btn-secondary flex-1 md:flex-none" onClick={() => setConfirm('close')}>
+            <button type="button" className="btn-secondary md:flex-none" onClick={() => setConfirm('close')}>
               Close session
             </button>
           </>
         ) : null}
         {canReopen ? (
-          <button type="button" className="btn-secondary flex-1 md:flex-none" onClick={() => void act('reopen')}>
+          <button type="button" className="btn-secondary md:flex-none" onClick={() => void act('reopen')}>
             Reopen
           </button>
         ) : null}
         {session.status !== 'cancelled' ? (
-          <button type="button" className="btn-danger flex-1 md:flex-none" onClick={() => setConfirm('cancel')}>
+          <button type="button" className="btn-danger md:flex-none" onClick={() => setConfirm('cancel')}>
             Cancel session
           </button>
         ) : null}
