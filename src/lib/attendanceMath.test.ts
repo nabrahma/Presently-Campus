@@ -1,19 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { attendanceStats, normalizeTarget, safetyZone, standings } from './attendanceMath'
-import type { AttendanceRecord, AttendanceStatus } from '../types'
+import {
+  attendanceStats,
+  figuresStats,
+  normalizeTarget,
+  safetyZone,
+  standings,
+  type CountedStatus
+} from './attendanceMath'
 
-let counter = 0
-const record = (status: AttendanceStatus): AttendanceRecord => ({
-  id: `r${(counter += 1)}`,
-  subjectId: 's',
-  recordDate: '2026-01-01',
-  sessionIndex: 1,
-  status,
-  createdAt: '',
-  updatedAt: ''
-})
+const record = (status: CountedStatus) => ({ status })
 
-const build = (present: number, absent: number, cancelled = 0, holiday = 0): AttendanceRecord[] => [
+const build = (present: number, absent: number, cancelled = 0, holiday = 0) => [
   ...Array.from({ length: present }, () => record('present')),
   ...Array.from({ length: absent }, () => record('absent')),
   ...Array.from({ length: cancelled }, () => record('cancelled')),
@@ -188,5 +185,27 @@ describe('standings', () => {
 
   it('has no spare figure when every subject is under target', () => {
     expect(standings([entry('MA201', 10, 6)]).leastSpare).toBeNull()
+  })
+})
+
+describe('figuresStats', () => {
+  it('gives the same answer as the records it summarises', () => {
+    // The server's held already excludes excused classes.
+    expect(figuresStats({ attended: 12, held: 17, excused: 2 }, 75)).toEqual(
+      attendanceStats(build(12, 5, 0, 2), 75)
+    )
+    expect(figuresStats({ attended: 15, held: 17, excused: 0 }, 75)).toMatchObject({ bunkable: 3 })
+  })
+
+  it('reports no data for a course with nothing held', () => {
+    expect(figuresStats({ attended: 0, held: 0, excused: 1 }, 75)).toMatchObject({
+      percentage: null,
+      total: 0,
+      holiday: 1
+    })
+  })
+
+  it('never invents absences from inconsistent counts', () => {
+    expect(figuresStats({ attended: 3, held: 2, excused: 0 }, 75)).toMatchObject({ present: 3, absent: 0 })
   })
 })

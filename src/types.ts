@@ -1,111 +1,85 @@
-export type AttendanceStatus = 'present' | 'absent' | 'cancelled' | 'holiday'
-export type SubjectType = 'lecture' | 'lab' | 'tutorial'
+export type Role = 'student' | 'teacher'
 
 export interface Profile {
   id: string
-  branch: string
-  semester: number
-  defaultTargetPercentage: number
-  fullName?: string
+  role: Role
+  fullName: string
+  /** Students only. Unique, stored upper-case. */
+  rollNumber: string | null
   /**
-   * The signup trigger creates a profile row with empty details, so the row
-   * existing is not proof that setup finished. This flag is that proof.
+   * The sign-up trigger creates an empty profile, so the row existing is not
+   * proof that setup finished. A teacher needs a name; a student needs a name
+   * and a roll number, because that is how they appear on a roster.
    */
   onboarded: boolean
 }
 
-export interface ScheduleItem {
-  weekday: number
-  sessionsPerDay: number
-}
-
-export interface Subject {
+export interface Course {
   id: string
+  teacherId: string
   name: string
-  code?: string
-  subjectType: SubjectType
-  color: string
+  code: string
+  section: string
+  term: string
   targetPercentage: number
-  isArchived: boolean
-  schedule: ScheduleItem[]
+  lateAfterMinutes: number
+  joinCode: string
+  archived: boolean
   createdAt: string
 }
 
-export interface AttendanceRecord {
+export type SessionStatus = 'open' | 'closed' | 'cancelled'
+
+export interface ClassSession {
   id: string
-  subjectId: string
-  recordDate: string
-  sessionIndex: number
-  status: AttendanceStatus
-  createdAt: string
-  updatedAt: string
+  courseId: string
+  startedBy: string
+  startedAt: string
+  closedAt: string | null
+  status: SessionStatus
+  note: string | null
 }
 
-export interface AppData {
-  profile: Profile | null
-  subjects: Subject[]
-  records: AttendanceRecord[]
+/** What a stored mark can say. Absence is never stored. */
+export type MarkStatus = 'present' | 'excused'
+export type MarkMethod = 'qr' | 'manual'
+
+export interface AttendanceMark {
+  sessionId: string
+  studentId: string
+  status: MarkStatus
+  method: MarkMethod
+  deviceId: string | null
+  markedAt: string
+  markedBy: string | null
+  reason: string | null
+  flags: string[]
 }
 
-export const ATTENDANCE_STATUSES: AttendanceStatus[] = ['present', 'absent', 'cancelled', 'holiday']
+/** A student's standing in one course, as the server computes it. */
+export interface Figures {
+  attended: number
+  held: number
+  excused: number
+}
 
-export const STATUS_LABELS: Record<AttendanceStatus, string> = {
+/** What a session meant for one student. */
+export type SessionOutcome = 'present' | 'excused' | 'absent' | 'open' | 'cancelled'
+
+export const OUTCOME_LABELS: Record<SessionOutcome, string> = {
   present: 'Present',
+  excused: 'Excused',
   absent: 'Absent',
-  cancelled: 'Cancelled',
-  holiday: 'Holiday'
+  open: 'In progress',
+  cancelled: 'Cancelled'
 }
-
-/** Short forms for the compact daily control, kept unambiguous. */
-export const STATUS_SHORT: Record<AttendanceStatus, string> = {
-  present: 'P',
-  absent: 'A',
-  cancelled: 'C',
-  holiday: 'H'
-}
-
-export const SUBJECT_TYPE_LABELS: Record<SubjectType, string> = {
-  lecture: 'Lecture',
-  lab: 'Lab',
-  tutorial: 'Tutorial'
-}
-
-export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-/**
- * Subject colours are used as small identifying marks rather than fills, so the
- * set favours hues that stay distinguishable against both themes.
- */
-export const SUBJECT_COLORS = [
-  '#e2503a',
-  '#e08a1e',
-  '#c9a227',
-  '#5c9e31',
-  '#1f8a4c',
-  '#0f9b8e',
-  '#2b7fd4',
-  '#4f5bd5',
-  '#7c4dcc',
-  '#b3439b',
-  '#d43f6f',
-  '#7a6a58'
-]
-
-export const BRANCHES = [
-  'CSE',
-  'ECE',
-  'EEE',
-  'Mechanical',
-  'Civil',
-  'Mathematics & Scientific Computing',
-  'IPG-IT',
-  'Other'
-]
 
 export const MIN_TARGET = 1
 export const MAX_TARGET = 100
-export const MIN_SEMESTER = 1
-export const MAX_SEMESTER = 12
-export const MAX_SESSIONS_PER_DAY = 8
-export const MAX_SUBJECT_NAME_LENGTH = 80
-export const MAX_SUBJECT_CODE_LENGTH = 16
+export const MAX_COURSE_NAME_LENGTH = 80
+export const MAX_COURSE_CODE_LENGTH = 16
+export const MAX_SECTION_LENGTH = 16
+export const MAX_TERM_LENGTH = 32
+export const MAX_NAME_LENGTH = 120
+export const MAX_ROLL_LENGTH = 32
+export const MAX_REASON_LENGTH = 200

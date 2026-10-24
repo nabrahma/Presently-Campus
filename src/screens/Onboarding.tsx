@@ -1,61 +1,54 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { motion } from 'motion/react'
-import { ArrowRight, Check, Trash2 } from 'lucide-react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import { Booting } from '../components/Booting'
-import { SubjectForm, type SubjectDraft } from '../components/SubjectForm'
-import { weeklyLoad } from '../lib/schedule'
-import { useStore } from '../lib/store'
-import {
-  BRANCHES,
-  MAX_SEMESTER,
-  MAX_TARGET,
-  MIN_SEMESTER,
-  MIN_TARGET,
-  WEEKDAY_LABELS,
-  type Subject
-} from '../types'
+import { PrivacyNotice } from '../components/PrivacyNotice'
+import { useSession } from '../lib/session'
+import { MAX_NAME_LENGTH, MAX_ROLL_LENGTH } from '../types'
 
+/**
+ * First sign-in: the details a roster needs. A student is listed by name and
+ * roll number; a teacher only by name. The role itself was decided by the
+ * server when the account was created.
+ */
 export function Onboarding() {
   const navigate = useNavigate()
-  const { profile, userId, cloud, hydrated, isDemo, saveProfile, addSubject } = useStore()
+  const { hydrated, userId, profile, profileError, saveProfile, signOut } = useSession()
 
-  const [step, setStep] = useState(1)
-  const [branch, setBranch] = useState(profile?.branch ?? BRANCHES[0])
-  const [semester, setSemester] = useState(String(profile?.semester ?? 1))
-  const [target, setTarget] = useState(String(profile?.defaultTargetPercentage ?? 75))
-  const [drafts, setDrafts] = useState<SubjectDraft[]>([])
+  const [fullName, setFullName] = useState(profile?.fullName ?? '')
+  const [rollNumber, setRollNumber] = useState(profile?.rollNumber ?? '')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
 
   if (!hydrated) return <Booting />
-  // Setup writes to an account, so it needs one. This route used to be open,
-  // which let people build a timetable that was never saved anywhere.
-  if (cloud && !userId && !isDemo) return <Navigate to="/auth" replace />
+  if (!userId) return <Navigate to="/auth" replace />
+  if (!profile) return <ProfileMissing message={profileError} onSignOut={() => void signOut()} />
+  if (profile.onboarded) return <Navigate to="/" replace />
 
-  const parsedSemester = Number(semester)
-  const parsedTarget = Number(target)
-  const detailsValid =
-    Number.isFinite(parsedSemester) &&
-    parsedSemester >= MIN_SEMESTER &&
-    parsedSemester <= MAX_SEMESTER &&
-    Number.isFinite(parsedTarget) &&
-    parsedTarget >= MIN_TARGET &&
-    parsedTarget <= MAX_TARGET
+  const student = profile.role === 'student'
 
-  const finish = async () => {
+  const submit = async (event: FormEvent) => {
+    event.preventDefault()
     if (busy) return
+
+    const name = fullName.trim().replace(/\s+/g, ' ')
+    const roll = rollNumber.replace(/\s+/g, '').toUpperCase()
+    if (!name) {
+      setError('Enter your full name.')
+      return
+    }
+    if (student && !roll) {
+      setError('Enter your roll number.')
+      return
+    }
+
     setBusy(true)
+    setError('')
     try {
-      await saveProfile({
-        branch,
-        semester: parsedSemester,
-        defaultTargetPercentage: parsedTarget,
-        onboarded: true
-      })
-      // Sequential so each subject's schedule lands with it, and a failure
-      // part-way through does not leave a half-written timetable.
-      for (const draft of drafts) await addSubject(draft)
+      await saveProfile(student ? { fullName: name, rollNumber: roll } : { fullName: name })
       navigate('/', { replace: true })
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Could not save your details.')
     } finally {
       setBusy(false)
     }
@@ -63,187 +56,105 @@ export function Onboarding() {
 
   return (
     <div className="scroll-region h-full">
-      <div
-        className="mx-auto flex min-h-full w-full max-w-[28rem] flex-col px-6"
+      <form
+        onSubmit={submit}
+        noValidate
+        className="mx-auto flex min-h-full w-full max-w-[28rem] flex-col justify-center px-6"
         style={{
           paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
           paddingBottom: 'max(2rem, env(safe-area-inset-bottom))'
         }}
       >
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-[0.9rem] tracking-[-0.02em]">Presently</span>
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
-            </div>
-            <span className="label">Step {step}/2</span>
-          </div>
-          <div className="h-px bg-line">
-            <motion.div
-              className="h-full bg-accent"
-              initial={false}
-              animate={{ width: `${step * 50}%` }}
-              transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            />
-          </div>
+        <div className="flex items-baseline gap-2">
+          <span className="font-mono text-[0.9rem] tracking-[-0.02em]">Presently</span>
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
+          <span className="label">{student ? 'Student' : 'Teacher'}</span>
         </div>
 
-        {step === 1 ? (
-          <section>
-            <h1 className="text-[1.6rem] leading-tight tracking-[-0.02em]">
-              A little about your term
-            </h1>
-            <p className="mt-3 text-[0.86rem] leading-relaxed text-ink-muted">
-              Used only to set sensible defaults. All of it can change later.
-            </p>
+        <h1 className="mt-8 text-[1.6rem] leading-tight tracking-[-0.02em]">
+          {student ? 'How your teachers see you' : 'How your students see you'}
+        </h1>
+        <p className="mt-3 text-[0.86rem] leading-relaxed text-ink-muted">
+          {student
+            ? 'Use your name and roll number exactly as they appear on the college register.'
+            : 'Your name appears on each course you create.'}
+        </p>
 
-            <div className="mt-8 space-y-5">
-              <div>
-                <label className="label mb-2.5 block" htmlFor="onboard-branch">
-                  Branch
-                </label>
-                <select
-                  id="onboard-branch"
-                  className="field"
-                  value={branch}
-                  onChange={(event) => setBranch(event.target.value)}
-                >
-                  {BRANCHES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <div className="mt-8 space-y-5">
+          <div>
+            <label className="label mb-2.5 block" htmlFor="onboard-name">
+              Full name
+            </label>
+            <input
+              id="onboard-name"
+              className="field"
+              autoComplete="name"
+              maxLength={MAX_NAME_LENGTH}
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+            />
+          </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label mb-2.5 block" htmlFor="onboard-semester">
-                    Semester
-                  </label>
-                  <input
-                    id="onboard-semester"
-                    className="field"
-                    type="number"
-                    inputMode="numeric"
-                    min={MIN_SEMESTER}
-                    max={MAX_SEMESTER}
-                    value={semester}
-                    onChange={(event) => setSemester(event.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="label mb-2.5 block" htmlFor="onboard-target">
-                    Target
-                  </label>
-                  <input
-                    id="onboard-target"
-                    className="field"
-                    type="number"
-                    inputMode="numeric"
-                    min={MIN_TARGET}
-                    max={MAX_TARGET}
-                    value={target}
-                    onChange={(event) => setTarget(event.target.value)}
-                  />
-                </div>
-              </div>
-
-              {!detailsValid ? (
-                <p role="alert" className="text-[0.75rem] text-danger">
-                  Semester must be {MIN_SEMESTER}–{MAX_SEMESTER} and target {MIN_TARGET}–{MAX_TARGET}.
-                </p>
-              ) : null}
-            </div>
-
-            <button
-              type="button"
-              className="btn-primary mt-8 w-full"
-              disabled={!detailsValid}
-              onClick={() => setStep(2)}
-            >
-              Continue
-              <ArrowRight size={14} strokeWidth={2.2} />
-            </button>
-          </section>
-        ) : (
-          <section>
-            <h1 className="text-[1.6rem] leading-tight tracking-[-0.02em]">Add your subjects</h1>
-            <p className="mt-3 text-[0.86rem] leading-relaxed text-ink-muted">
-              Pick the days each one meets. This is what fills your daily check-in.
-            </p>
-
-            {drafts.length > 0 ? (
-              <div className="mt-6 rounded-panel border border-line px-4">
-                {drafts.map((draft, index) => (
-                  <div
-                    key={`${draft.name}-${index}`}
-                    className="flex items-center gap-3 border-b border-line py-3 last:border-b-0"
-                  >
-                    <span
-                      aria-hidden
-                      className="h-7 w-[2px] shrink-0 rounded-full"
-                      style={{ backgroundColor: draft.color }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.85rem]">{draft.name}</p>
-                      <p className="label mt-1.5">
-                        {draft.schedule.length > 0
-                          ? `${draft.schedule.map((item) => WEEKDAY_LABELS[item.weekday]).join(' ')} · ${weeklyLoad(draft as Subject)}/wk`
-                          : 'No days set'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${draft.name}`}
-                      onClick={() => setDrafts((list) => list.filter((_, position) => position !== index))}
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-faint active:opacity-60"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            <div className="mt-5 rounded-panel border border-line p-5">
-              <SubjectForm
-                key={drafts.length}
-                submitLabel="Add to list"
-                defaultTarget={parsedTarget}
-                existingNames={drafts.map((draft) => draft.name)}
-                onSubmit={(draft) => setDrafts((list) => [...list, draft])}
+          {student ? (
+            <div>
+              <label className="label mb-2.5 block" htmlFor="onboard-roll">
+                Roll number
+              </label>
+              <input
+                id="onboard-roll"
+                className="field font-mono uppercase"
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={MAX_ROLL_LENGTH}
+                value={rollNumber}
+                onChange={(event) => setRollNumber(event.target.value)}
               />
             </div>
+          ) : null}
 
-            <div className="mt-7 space-y-3">
-              <button
-                type="button"
-                className="btn-primary w-full"
-                disabled={busy}
-                onClick={() => void finish()}
-              >
-                {busy ? (
-                  'Setting up'
-                ) : drafts.length > 0 ? (
-                  <>
-                    <Check size={14} strokeWidth={2.4} />
-                    Finish · {drafts.length}
-                  </>
-                ) : (
-                  'Skip for now'
-                )}
-              </button>
-              <button
-                type="button"
-                className="mx-auto block font-mono text-[0.65rem] tracking-[0.08em] text-ink-muted uppercase active:opacity-60"
-                onClick={() => setStep(1)}
-              >
-                Back
-              </button>
-            </div>
-          </section>
-        )}
+          <PrivacyNotice role={profile.role} />
+
+          {error ? (
+            <p
+              role="alert"
+              className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[0.78rem] text-danger"
+            >
+              {error}
+            </p>
+          ) : null}
+        </div>
+
+        <button type="submit" className="btn-primary mt-8 w-full" disabled={busy}>
+          {busy ? (
+            <Loader2 size={15} className="motion-safe:animate-spin" />
+          ) : (
+            <>
+              Continue
+              <ArrowRight size={14} strokeWidth={2.2} />
+            </>
+          )}
+        </button>
+      </form>
+    </div>
+  )
+}
+
+/** Shown when the profile could not be loaded and there is no cached copy. */
+export function ProfileMissing({ message, onSignOut }: { message: string | null; onSignOut: () => void }) {
+  return (
+    <div className="flex h-full items-center justify-center px-6">
+      <div className="w-full max-w-[22rem] text-center">
+        <h1 className="readout text-[1.3rem]">Could not load your account</h1>
+        <p className="mt-3 text-[0.85rem] leading-relaxed text-ink-muted">
+          {message ?? 'Check your connection and try again.'}
+        </p>
+        <button type="button" className="btn-primary mt-7 w-full" onClick={() => window.location.reload()}>
+          Try again
+        </button>
+        <button type="button" className="btn-secondary mt-3 w-full" onClick={onSignOut}>
+          Sign out
+        </button>
       </div>
     </div>
   )

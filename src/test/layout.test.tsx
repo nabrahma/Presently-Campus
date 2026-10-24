@@ -5,7 +5,10 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
-import { StoreProvider } from '../lib/store'
+import { clearRemoteCache } from '../lib/remote'
+import { SessionProvider } from '../lib/session'
+import { setFixtures } from './fakeSupabase'
+import { studentWorld } from './fixtures'
 
 /*
   jsdom has no layout engine, so these assert the structural rules the layout
@@ -17,11 +20,11 @@ import { StoreProvider } from '../lib/store'
   pushed off-screen. That shipped once.
 */
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: null,
-  isCloudEnabled: false,
-  describeError: (error: unknown) => String(error)
-}))
+vi.mock('../lib/supabaseClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/supabaseClient')>()
+  const { fakeSupabase } = await import('./fakeSupabase')
+  return { ...actual, supabase: fakeSupabase, isCloudEnabled: true }
+})
 
 vi.mock('virtual:pwa-register/react', () => ({
   useRegisterSW: () => ({
@@ -31,60 +34,12 @@ vi.mock('virtual:pwa-register/react', () => ({
   })
 }))
 
-function seedOnboardedAccount() {
-  window.localStorage.setItem(
-    'presently:v3:data:guest',
-    JSON.stringify({
-      profile: {
-        id: 'local',
-        branch: 'CSE',
-        semester: 5,
-        defaultTargetPercentage: 75,
-        onboarded: true
-      },
-      subjects: [
-        {
-          id: 'sub-1',
-          name: 'Algorithms',
-          code: 'CS201',
-          subjectType: 'lecture',
-          color: '#7fc99a',
-          targetPercentage: 75,
-          isArchived: false,
-          createdAt: '2026-01-01T00:00:00.000Z',
-          schedule: [{ weekday: 1, sessionsPerDay: 1 }]
-        }
-      ],
-      records: [
-        {
-          id: 'rec-1',
-          subjectId: 'sub-1',
-          recordDate: '2026-01-05',
-          sessionIndex: 1,
-          status: 'present',
-          createdAt: '',
-          updatedAt: ''
-        },
-        {
-          id: 'rec-2',
-          subjectId: 'sub-1',
-          recordDate: '2026-01-12',
-          sessionIndex: 1,
-          status: 'absent',
-          createdAt: '',
-          updatedAt: ''
-        }
-      ]
-    })
-  )
-}
-
 function mount(route = '/') {
   return render(
     <MemoryRouter initialEntries={[route]}>
-      <StoreProvider>
+      <SessionProvider>
         <App />
-      </StoreProvider>
+      </SessionProvider>
     </MemoryRouter>
   )
 }
@@ -95,11 +50,13 @@ const classesOf = (element: Element) => element.className.split(/\s+/).filter(Bo
 const bare = (token: string) => token.replace(/^[a-z]+:/, '')
 
 beforeEach(() => {
-  window.localStorage.clear()
-  seedOnboardedAccount()
+  setFixtures(studentWorld())
 })
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  clearRemoteCache()
+})
 
 describe('the scroll chain', () => {
   it('lets every flexible ancestor of the scroll region shrink', async () => {
@@ -167,27 +124,5 @@ describe('screen structure', () => {
 
     expect(document.querySelectorAll('main.scroll-region')).toHaveLength(1)
     expect(screen.getByRole('navigation')).toBeTruthy()
-  })
-})
-
-describe('subject detail', () => {
-  it('renders a subject with its margin, totals and history', async () => {
-    mount('/subjects/sub-1')
-
-    expect(await screen.findByRole('heading', { name: 'Algorithms' })).toBeTruthy()
-
-    // 1 of 2 counted is 50%, below the 75% target, so the margin is the run
-    // needed to recover rather than classes to spare.
-    expect(screen.getByText('Margin')).toBeTruthy()
-    expect(screen.getByText(/attend the next 2/i)).toBeTruthy()
-    expect(screen.getByText('50')).toBeTruthy()
-
-    expect(screen.getByText(/history · 2/i)).toBeTruthy()
-    expect(document.querySelectorAll('main.scroll-region')).toHaveLength(1)
-  })
-
-  it('sends an unknown subject back to the list', async () => {
-    mount('/subjects/does-not-exist')
-    expect(await screen.findByRole('heading', { name: /^subjects$/i })).toBeTruthy()
   })
 })

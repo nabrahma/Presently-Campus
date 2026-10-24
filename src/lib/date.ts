@@ -67,3 +67,25 @@ export function formatWeekday(date: Date): string {
 export function formatDayMonth(date: Date): string {
   return dayMonthFormat.format(date)
 }
+
+/*
+  Sessions carry full timestamps rather than date keys, and are shown in the
+  device's own time, which for a campus app is the campus's time.
+*/
+const shortDayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+
+/** e.g. "Mon 21 Oct" */
+export function formatShortDay(iso: string): string {
+  return shortDayFormat.format(new Date(iso))
+}
+
+/** e.g. "10:02" */
+export function formatTime(iso: string): string {
+  return timeFormat.format(new Date(iso))
+}
+
+/** e.g. "Mon 21 Oct · 10:02" */
+export function formatSessionTime(iso: string): string {
+  return `${formatShortDay(iso)} · ${formatTime(iso)}`
+}

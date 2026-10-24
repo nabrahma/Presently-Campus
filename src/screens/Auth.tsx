@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowRight, Loader2, MailCheck } from 'lucide-react'
 import { Booting } from '../components/Booting'
 import { cn } from '../lib/cn'
-import { useStore } from '../lib/store'
+import { useSession } from '../lib/session'
 import { describeError, supabase } from '../lib/supabaseClient'
 
 type Mode = 'signIn' | 'signUp'
@@ -13,7 +13,7 @@ const RESEND_SECONDS = 45
 
 export function Auth() {
   const navigate = useNavigate()
-  const { userId, hydrated, profile, cloud, startDemo, isDemo } = useStore()
+  const { userId, hydrated, profile, cloud } = useSession()
 
   const [mode, setMode] = useState<Mode>('signIn')
   const [method, setMethod] = useState<Method>('link')
@@ -33,9 +33,8 @@ export function Auth() {
     }
   }, [cooldown])
 
-  if (userId && !hydrated) return <Booting />
+  if (!hydrated) return <Booting />
   if (userId) return <Navigate to={profile?.onboarded ? '/' : '/onboarding'} replace />
-  if (isDemo) return <Navigate to="/" replace />
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -141,12 +140,13 @@ export function Auth() {
       </div>
 
       <h1 className="mt-8 text-[1.75rem] leading-[1.15] tracking-[-0.02em]">
-        Attendance, without
+        Scan in.
         <br />
-        the mental arithmetic.
+        See where you stand.
       </h1>
       <p className="mt-4 text-[0.88rem] leading-relaxed text-ink-muted">
-        Mark what happened. Presently works out how many classes you can still miss.
+        Class attendance by QR code, with every subject&rsquo;s margin worked out for you. Sign in
+        with your college email; teachers are recognised automatically.
       </p>
 
       {cloud ? (
@@ -180,7 +180,7 @@ export function Auth() {
           <form onSubmit={submit} noValidate className="mt-6 space-y-4">
             <div>
               <label className="label mb-2.5 block" htmlFor="auth-email">
-                Email
+                College email
               </label>
               <input
                 id="auth-email"
@@ -256,30 +256,13 @@ export function Auth() {
         </>
       ) : (
         <p className="mt-8 rounded-2xl border border-line px-4 py-4 text-[0.8rem] leading-relaxed text-ink-muted">
-          No Supabase credentials in this build, so accounts and sync are off. Everything else works
-          and stays on this device.
+          This build has no Supabase credentials. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+          for the Presently Campus project and rebuild.
         </p>
       )}
 
-      <div className="my-7 flex items-center gap-3">
-        <span className="h-px flex-1 bg-line" />
-        <span className="label">or</span>
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
-      <button
-        type="button"
-        className="btn-secondary w-full"
-        onClick={() => {
-          startDemo()
-          navigate('/', { replace: true })
-        }}
-      >
-        Explore sample data
-      </button>
-
       <p className="mt-8 text-center font-mono text-[0.6rem] tracking-[0.08em] text-ink-faint uppercase">
-        Private to your account
+        One account per student · one phone per account
       </p>
     </Frame>
   )

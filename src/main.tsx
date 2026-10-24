@@ -5,7 +5,7 @@ import { Toaster } from 'sonner'
 import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { UpdatePrompt } from './components/UpdatePrompt'
-import { StoreProvider } from './lib/store'
+import { SessionProvider } from './lib/session'
 import './index.css'
 
 const container = document.getElementById('root')
@@ -15,7 +15,7 @@ createRoot(container).render(
   <StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
-        <StoreProvider>
+        <SessionProvider>
           <App />
           <UpdatePrompt />
           <Toaster
@@ -34,7 +34,7 @@ createRoot(container).render(
               }
             }}
           />
-        </StoreProvider>
+        </SessionProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </StrictMode>
