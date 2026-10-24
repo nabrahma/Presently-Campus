@@ -17,6 +17,7 @@ import {
   closeSession,
   reopenSession,
   teacherMark,
+  useLiveMarks,
   useSessionDetail,
   type ReportStatus,
   type SessionReportRow
@@ -25,8 +26,8 @@ import { MAX_REASON_LENGTH } from '../../types'
 
 /** A closed session can be reopened for this long, matching the server. */
 const REOPEN_WINDOW_MS = 15 * 60_000
-/** How often an open session's lists refresh while the screen is showing. */
-const LIVE_REFRESH_MS = 5_000
+/** A fallback poll for an open session; Realtime does the work while it is connected. */
+const LIVE_REFRESH_MS = 15_000
 
 export function TeacherSessionDetail() {
   const { id } = useParams()
@@ -37,6 +38,7 @@ export function TeacherSessionDetail() {
   const [now, setNow] = useState(() => Date.now())
 
   const status = data?.session.status
+  useLiveMarks(id, status === 'open')
   useEffect(() => {
     if (status !== 'open') return
     const timer = window.setInterval(() => void refresh(), LIVE_REFRESH_MS)

@@ -116,13 +116,31 @@ function session() {
   }
 }
 
-const channel = {
-  on() {
-    return channel
-  },
-  subscribe() {
-    return channel
+type RealtimeListener = { filter: { table?: string; filter?: string }; callback: () => void }
+const realtime: RealtimeListener[] = []
+
+/** Delivers a change event to every subscriber on that table, as Realtime would. */
+export function emitRealtime(table: string) {
+  for (const listener of realtime) if (listener.filter.table === table) listener.callback()
+}
+
+function channel() {
+  const own: RealtimeListener[] = []
+  const handle = {
+    on(_type: string, filter: RealtimeListener['filter'], callback: () => void) {
+      const listener = { filter, callback }
+      own.push(listener)
+      realtime.push(listener)
+      return handle
+    },
+    subscribe() {
+      return handle
+    },
+    unsubscribe() {
+      for (const listener of own) realtime.splice(realtime.indexOf(listener), 1)
+    }
   }
+  return handle
 }
 
 export const fakeSupabase = {
@@ -147,8 +165,11 @@ export const fakeSupabase = {
     }
   },
 
-  channel: () => channel,
-  removeChannel: () => Promise.resolve('ok'),
+  channel,
+  removeChannel: (handle: { unsubscribe: () => void }) => {
+    handle.unsubscribe()
+    return Promise.resolve('ok')
+  },
 
   auth: {
     getSession: async () => ({ data: { session: session() }, error: null }),

@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { clearRemoteCache } from '../lib/remote'
 import { SessionProvider } from '../lib/session'
-import { calls, setFixtures } from './fakeSupabase'
+import { calls, emitRealtime, setFixtures } from './fakeSupabase'
 import { course, reportRow, STUDENT, teacherWorld } from './fixtures'
 import { describeAgent } from '../screens/teacher/Approvals'
 
@@ -181,6 +181,31 @@ describe('projector', () => {
     expect(screen.getByRole('timer')).toBeTruthy()
     // Full screen: the dock is not there to distract a projected class.
     expect(screen.queryByRole('navigation')).toBeNull()
+  })
+
+  it('moves the count as marks arrive over Realtime', async () => {
+    const world = teacherWorld()
+    let present = ['s-a']
+    setFixtures({
+      ...world,
+      rpc: {
+        ...world.rpc,
+        live_session_key: () => ({ secret: btoa(String.fromCharCode(...new Array(32).fill(7))), server_time: Date.now() }),
+        session_report: () =>
+          [
+            ['s-a', '21CS10', 'Chen Li'],
+            ['s-b', '21CS9', 'Bilal Khan'],
+            ['s-c', '21CS2', 'Asha Rao']
+          ].map(([id, roll, name]) => reportRow(id, roll, name, present.includes(id) ? 'present' : 'absent'))
+      }
+    })
+    mount('/live/live')
+    await screen.findByText(/of 3 marked/i)
+    expect(screen.getByText('1')).toBeTruthy()
+
+    present = ['s-a', 's-b']
+    emitRealtime('attendance')
+    expect(await screen.findByText('2')).toBeTruthy()
   })
 
   it('says so when the session has already closed', async () => {

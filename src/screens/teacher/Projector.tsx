@@ -11,12 +11,15 @@ import { formatTime } from '../../lib/date'
 import { flagLabel } from '../../lib/flags'
 import { clockOffset, useRotatingToken, useWakeLock } from '../../lib/projector'
 import { useSession, useUserId } from '../../lib/session'
-import { closeSession, fetchLiveKey, useSessionDetail } from '../../lib/teacher'
+import { closeSession, fetchLiveKey, useLiveMarks, useSessionDetail } from '../../lib/teacher'
 import { base64Decode, WINDOW_SECONDS } from '../../../supabase/functions/_shared/qrToken.ts'
 import { groupReport } from './SessionDetail'
 
-/** How often the marked count refreshes while the code is up. */
-const COUNT_REFRESH_MS = 3_000
+/**
+ * The count follows Realtime as marks arrive; this poll is the fallback for a
+ * connection that drops events.
+ */
+const COUNT_REFRESH_MS = 10_000
 
 /**
  * The classroom screen: a rotating QR code as large as the display allows,
@@ -58,6 +61,7 @@ export function Projector() {
   const open = data?.session.status === 'open'
   const { token, remaining } = useRotatingToken(open ? (key?.secret ?? null) : null, id ?? null, key?.offset ?? 0)
   useWakeLock(open)
+  useLiveMarks(id, open)
 
   useEffect(() => {
     if (!open) return
