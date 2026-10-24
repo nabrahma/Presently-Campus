@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { CameraOff, Check, CircleSlash, Loader2, TriangleAlert, X } from 'lucide-react'
+import { CameraOff, Check, ChevronRight, CircleSlash, Loader2, ScanLine, TriangleAlert, X } from 'lucide-react'
 import type QrScannerType from 'qr-scanner'
 import { describePhone } from '../../components/PhonePanel'
 import { ScreenHead } from '../../components/Shell'
@@ -128,21 +128,25 @@ export function Scan() {
 
   return (
     <>
-      <ScreenHead label="Point at the teacher's screen" title="Scan" />
+      <ScreenHead label="Point at the teacher's screen" title="Scan" icon={<ScanLine size={26} strokeWidth={2} />} />
 
       {warning ? (
         <Link
           to="/settings"
-          className="mb-4 flex items-start gap-2.5 rounded-2xl border border-warn/40 px-4 py-3 active:opacity-60"
+          className="mb-5 flex items-center gap-3.5 rounded-panel border border-warn/40 bg-warn-wash px-4 py-4 active:opacity-70 md:px-5"
         >
-          <TriangleAlert size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-warn" />
-          <span className="text-[0.76rem] leading-relaxed text-ink-muted">
-            <span className="text-warn">{warning.label}.</span> {warning.text}
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface text-warn">
+            <TriangleAlert size={22} strokeWidth={2} />
           </span>
+          <span className="min-w-0 flex-1 text-[1rem] leading-relaxed">
+            <span className="font-semibold text-warn">{warning.label}.</span> <span className="text-ink">{warning.text}</span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-ink-muted" />
         </Link>
       ) : null}
 
-      <div className="relative mx-auto aspect-[3/4] max-h-[62dvh] w-full overflow-hidden rounded-panel border border-line bg-surface md:aspect-video">
+      {/* A viewfinder is dark in both themes, as a camera's is. */}
+      <div className="relative mx-auto aspect-[3/4] max-h-[64dvh] w-full max-w-[52rem] overflow-hidden rounded-[1.75rem] border border-line bg-[#111113] shadow-(--shadow-card) md:aspect-video">
         {online ? (
           // Muted and inline, or iOS refuses to play it without a tap.
           <video ref={videoRef} muted playsInline className="absolute inset-0 h-full w-full object-cover" />
@@ -175,7 +179,7 @@ export function Scan() {
         {verdict ? <VerdictCard verdict={verdict} onAgain={again} /> : null}
       </div>
 
-      <p role="status" className="mt-4 min-h-5 text-center font-mono text-[0.68rem] tracking-[0.06em] text-ink-muted">
+      <p role="status" className="mt-4 min-h-7 text-center text-[1.0625rem] font-medium text-ink-muted">
         {hint || (camera === 'live' && !verdict ? 'Hold steady. It reads the code on its own.' : '')}
       </p>
     </>
@@ -184,14 +188,14 @@ export function Scan() {
 
 /** Four corner marks: where to put the code, without hiding the picture. */
 function FramingGuide() {
-  const corner = 'absolute h-9 w-9 border-accent'
+  const corner = 'absolute h-12 w-12 border-accent-bright'
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
       <div className="relative aspect-square w-[62%] max-w-[18rem]">
-        <span className={cn(corner, 'top-0 left-0 rounded-tl-2xl border-t-[3px] border-l-[3px]')} />
-        <span className={cn(corner, 'top-0 right-0 rounded-tr-2xl border-t-[3px] border-r-[3px]')} />
-        <span className={cn(corner, 'bottom-0 left-0 rounded-bl-2xl border-b-[3px] border-l-[3px]')} />
-        <span className={cn(corner, 'right-0 bottom-0 rounded-br-2xl border-r-[3px] border-b-[3px]')} />
+        <span className={cn(corner, 'top-0 left-0 rounded-tl-3xl border-t-[5px] border-l-[5px]')} />
+        <span className={cn(corner, 'top-0 right-0 rounded-tr-3xl border-t-[5px] border-r-[5px]')} />
+        <span className={cn(corner, 'bottom-0 left-0 rounded-bl-3xl border-b-[5px] border-l-[5px]')} />
+        <span className={cn(corner, 'right-0 bottom-0 rounded-br-3xl border-r-[5px] border-b-[5px]')} />
       </div>
     </div>
   )
@@ -199,10 +203,12 @@ function FramingGuide() {
 
 function Notice({ icon, title, children }: { icon: ReactNode; title: string; children?: ReactNode }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface px-8 text-center">
-      <span className="text-ink-muted">{icon}</span>
-      <p className="readout mt-4 text-[1rem]">{title}</p>
-      {children ? <p className="mt-3 max-w-[20rem] text-[0.78rem] leading-relaxed text-ink-muted">{children}</p> : null}
+    <div className="dot-grid absolute inset-0 flex flex-col items-center justify-center bg-elevated px-8 text-center">
+      <span className="grid size-16 place-items-center rounded-2xl border border-line bg-surface text-ink shadow-(--shadow-card) [&_svg]:size-7">
+        {icon}
+      </span>
+      <p className="title mt-5 text-[1.375rem]">{title}</p>
+      {children ? <p className="mt-3 max-w-[26rem] text-[1rem] leading-relaxed text-ink-muted">{children}</p> : null}
     </div>
   )
 }
@@ -212,9 +218,9 @@ const DEVICE_REASONS = new Set(['device_not_registered', 'device_too_new', 'devi
 function VerdictCard({ verdict, onAgain }: { verdict: Verdict; onAgain: () => void }) {
   if (verdict.kind === 'checking') {
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center bg-bg/85 backdrop-blur-sm">
-        <Loader2 size={26} className="text-accent motion-safe:animate-spin" />
-        <p className="label mt-4">Checking</p>
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/90 backdrop-blur-sm">
+        <Loader2 size={40} className="text-accent motion-safe:animate-spin" />
+        <p className="title mt-5 text-[1.375rem]">Checking…</p>
       </div>
     )
   }
@@ -229,7 +235,7 @@ function VerdictCard({ verdict, onAgain }: { verdict: Verdict; onAgain: () => vo
       animate={{ opacity: 1 }}
       className={cn(
         'absolute inset-0 flex flex-col items-center justify-center px-8 text-center',
-        success ? 'bg-accent-wash' : 'bg-danger-wash'
+        success ? 'bg-good-wash' : 'bg-danger-wash'
       )}
     >
       <motion.span
@@ -237,23 +243,23 @@ function VerdictCard({ verdict, onAgain }: { verdict: Verdict; onAgain: () => vo
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 420, damping: 22 }}
         className={cn(
-          'grid h-16 w-16 place-items-center rounded-full',
-          success ? 'bg-accent text-bg' : 'bg-danger-solid text-danger'
+          'grid size-24 place-items-center rounded-full text-surface',
+          success ? 'bg-good-bright' : 'bg-danger'
         )}
       >
-        {success ? <Check size={30} strokeWidth={2.6} /> : <X size={30} strokeWidth={2.6} />}
+        {success ? <Check size={48} strokeWidth={2.8} /> : <X size={48} strokeWidth={2.8} />}
       </motion.span>
 
-      <p className={cn('readout mt-6 text-[1.35rem] leading-snug', success ? 'text-accent' : 'text-danger')}>{result.message}</p>
+      <p className={cn('title mt-6 max-w-[26rem] text-[1.75rem]', success ? 'text-good' : 'text-danger')}>{result.message}</p>
 
       {marked ? (
-        <p className="mt-3 font-mono text-[0.78rem] tracking-[0.04em] text-ink">
+        <p className="mt-3 text-[1.125rem] font-medium text-ink">
           {result.courseName}
           {'markedAt' in result && result.markedAt ? ` · ${formatTime(result.markedAt)}` : ''}
         </p>
       ) : null}
 
-      <div className="mt-8 flex w-full max-w-[18rem] flex-col gap-3">
+      <div className="mt-8 flex w-full max-w-[22rem] flex-col gap-3">
         {success ? (
           <Link to="/" className="btn-primary w-full">
             Done
