@@ -267,8 +267,10 @@ export function ScreenHead({
           </span>
         ) : null}
         <div className="min-w-0">
-          <h1 className="title truncate text-[1.75rem] md:text-[2.125rem]">{title}</h1>
-          <p className="mt-1 truncate text-[1.0625rem] text-ink-muted md:text-[1.125rem]">{label}</p>
+          {/* Wrapped, not truncated: a cut-off course name or join code
+              helps nobody. */}
+          <h1 className="title text-[1.75rem] break-words md:text-[2.125rem]">{title}</h1>
+          <p className="mt-1 text-[1.0625rem] text-ink-muted md:text-[1.125rem]">{label}</p>
         </div>
       </div>
       {action}
