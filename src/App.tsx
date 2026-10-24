@@ -10,7 +10,8 @@ import type { Role } from './types'
 
 /*
   A student's home is the reason the app gets opened, so it ships in the entry
-  chunk and paints immediately. Everything else loads when first visited.
+  chunk and paints immediately. Everything else, the teacher's screens
+  included, loads when first visited.
 */
 const Auth = lazy(() => import('./screens/Auth').then((m) => ({ default: m.Auth })))
 const Onboarding = lazy(() => import('./screens/Onboarding').then((m) => ({ default: m.Onboarding })))
@@ -20,6 +21,10 @@ const loadStudentCourses = () => import('./screens/student/Courses')
 const loadStudentCourseDetail = () => import('./screens/student/CourseDetail')
 const loadJoinLink = () => import('./screens/student/JoinLink')
 const loadSettings = () => import('./screens/Settings')
+const loadTeacherCourses = () => import('./screens/teacher/Courses')
+const loadTeacherCourseDetail = () => import('./screens/teacher/CourseDetail')
+const loadTeacherSession = () => import('./screens/teacher/SessionDetail')
+const loadTeacherLive = () => import('./screens/teacher/Live')
 
 const StudentCourses = lazy(() => loadStudentCourses().then((m) => ({ default: m.StudentCourses })))
 const StudentCourseDetail = lazy(() =>
@@ -27,10 +32,18 @@ const StudentCourseDetail = lazy(() =>
 )
 const JoinLink = lazy(() => loadJoinLink().then((m) => ({ default: m.JoinLink })))
 const Settings = lazy(() => loadSettings().then((m) => ({ default: m.Settings })))
+const TeacherCourses = lazy(() => loadTeacherCourses().then((m) => ({ default: m.TeacherCourses })))
+const TeacherCourseDetail = lazy(() =>
+  loadTeacherCourseDetail().then((m) => ({ default: m.TeacherCourseDetail }))
+)
+const TeacherSessionDetail = lazy(() =>
+  loadTeacherSession().then((m) => ({ default: m.TeacherSessionDetail }))
+)
+const TeacherLive = lazy(() => loadTeacherLive().then((m) => ({ default: m.TeacherLive })))
 
 const WARM: Record<Role, Array<() => Promise<unknown>>> = {
   student: [loadStudentCourses, loadStudentCourseDetail, loadSettings],
-  teacher: [loadSettings]
+  teacher: [loadTeacherCourseDetail, loadTeacherSession, loadTeacherLive, loadSettings]
 }
 
 /**
@@ -151,7 +164,10 @@ const studentRoutes = (
 
 const teacherRoutes = (
   <>
-    <Route path="/" element={<Navigate to="/settings" replace />} />
+    <Route path="/" element={<TeacherCourses />} />
+    <Route path="/courses/:id" element={<TeacherCourseDetail />} />
+    <Route path="/sessions/:id" element={<TeacherSessionDetail />} />
+    <Route path="/live" element={<TeacherLive />} />
     <Route path="/settings" element={<Settings />} />
   </>
 )
@@ -179,18 +195,35 @@ export default function App() {
         }
       />
 
-      {/* The shell mounts once and every tab renders into its outlet. */}
-      <Route
-        element={
-          <Protected>
-            <Shell />
-          </Protected>
-        }
-      >
-        {profile?.role === 'teacher' ? teacherRoutes : studentRoutes}
-      </Route>
-
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {profile ? (
+        <>
+          {/* The shell mounts once and every tab renders into its outlet. */}
+          <Route
+            element={
+              <Protected>
+                <Shell />
+              </Protected>
+            }
+          >
+            {profile.role === 'teacher' ? teacherRoutes : studentRoutes}
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      ) : (
+        /*
+          Which paths exist depends on the role, so nothing is matched until
+          the profile is known. Otherwise a teacher reloading a session page
+          would fall through to the catch-all and lose their place.
+        */
+        <Route
+          path="*"
+          element={
+            <Protected>
+              <Booting />
+            </Protected>
+          }
+        />
+      )}
     </Routes>
   )
 }

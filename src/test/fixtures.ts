@@ -79,3 +79,73 @@ export function studentWorld(overrides: Partial<Fixtures> = {}): Partial<Fixture
     ...overrides
   }
 }
+
+export const rosterRow = (studentId: string, roll: string, name: string, attended: number, held: number): Row => ({
+  student_id: studentId,
+  full_name: name,
+  roll_number: roll,
+  enrolment_status: 'active',
+  joined_at: hoursAgo(24 * 30),
+  attended,
+  held,
+  excused: 0
+})
+
+export const reportRow = (studentId: string, roll: string, name: string, status: string, overrides: Row = {}): Row => ({
+  student_id: studentId,
+  full_name: name,
+  roll_number: roll,
+  status,
+  method: status === 'absent' ? null : 'qr',
+  marked_at: status === 'absent' ? null : hoursAgo(0.1),
+  reason: null,
+  flags: [],
+  joined_after_start: false,
+  ...overrides
+})
+
+/**
+ * A teacher with one course of three students: one comfortably on target,
+ * two below it. A session is open, with one student scanned in.
+ */
+export function teacherWorld(overrides: Partial<Fixtures> = {}): Partial<Fixtures> {
+  const open = session('live', 0.1, 'open')
+  return {
+    user: TEACHER,
+    tables: {
+      profiles: [teacherProfile()],
+      courses: [course()],
+      class_sessions: [{ ...open, course: course() }]
+    },
+    rpc: {
+      my_courses_overview: () => [
+        { course_id: 'course-1', students: 3, sessions_held: 10, average_percentage: 70, at_risk: 2, open_session_id: 'live' }
+      ],
+      course_report: () => [
+        rosterRow('s-a', '21CS10', 'Chen Li', 9, 10),
+        rosterRow('s-b', '21CS9', 'Bilal Khan', 6, 10),
+        rosterRow('s-c', '21CS2', 'Asha Rao', 7, 10)
+      ],
+      course_sessions_summary: () => [
+        {
+          session_id: 'live',
+          started_at: open.started_at,
+          closed_at: null,
+          status: 'open',
+          note: null,
+          expected: 3,
+          present: 1,
+          excused: 0,
+          flagged: 0
+        }
+      ],
+      session_report: () => [
+        reportRow('s-a', '21CS10', 'Chen Li', 'present'),
+        reportRow('s-b', '21CS9', 'Bilal Khan', 'absent'),
+        reportRow('s-c', '21CS2', 'Asha Rao', 'absent')
+      ],
+      teacher_mark: (args) => ({ session_id: args.p_session, student_id: args.p_student, status: args.p_status })
+    },
+    ...overrides
+  }
+}

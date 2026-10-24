@@ -14,16 +14,26 @@ export interface Fixtures {
   tables: Record<string, Row[]>
   rpc: Record<string, (args: Record<string, unknown>) => unknown>
   functions: Record<string, (body: Record<string, unknown>) => { data?: unknown; error?: { message: string } }>
+  /** Fills in what the database would for an inserted row: ids, defaults. */
+  onInsert: (table: string, row: Row) => Row
 }
 
-let fixtures: Fixtures = { user: null, tables: {}, rpc: {}, functions: {} }
+const DEFAULTS: Fixtures = {
+  user: null,
+  tables: {},
+  rpc: {},
+  functions: {},
+  onInsert: (table, row) => ({ id: `${table}-new`, ...row })
+}
+
+let fixtures: Fixtures = DEFAULTS
 let authListener: ((event: string, session: unknown) => void) | null = null
 
 /** Every write and call the app made, in order, for assertions. */
-export const calls: Array<{ kind: 'update' | 'rpc' | 'function'; name: string; args: unknown }> = []
+export const calls: Array<{ kind: 'insert' | 'update' | 'rpc' | 'function'; name: string; args: unknown }> = []
 
 export function setFixtures(next: Partial<Fixtures>) {
-  fixtures = { user: null, tables: {}, rpc: {}, functions: {}, ...next }
+  fixtures = { ...DEFAULTS, ...next }
   calls.length = 0
 }
 
@@ -33,6 +43,7 @@ class Query implements PromiseLike<{ data: unknown; error: { message: string } |
   private filters: Array<(row: Row) => boolean> = []
   private mode: 'many' | 'single' | 'maybe' = 'many'
   private patch: Row | null = null
+  private inserted: Row[] | null = null
 
   constructor(private table: string) {}
 
@@ -53,6 +64,13 @@ class Query implements PromiseLike<{ data: unknown; error: { message: string } |
   limit() {
     return this
   }
+  insert(rows: Row | Row[]) {
+    const list = (Array.isArray(rows) ? rows : [rows]).map((row) => fixtures.onInsert(this.table, row))
+    calls.push({ kind: 'insert', name: this.table, args: rows })
+    fixtures.tables[this.table] = [...(fixtures.tables[this.table] ?? []), ...list]
+    this.inserted = list
+    return this
+  }
   update(patch: Row) {
     this.patch = patch
     calls.push({ kind: 'update', name: this.table, args: patch })
@@ -68,7 +86,8 @@ class Query implements PromiseLike<{ data: unknown; error: { message: string } |
   }
 
   private execute() {
-    const rows = (fixtures.tables[this.table] ?? []).filter((row) => this.filters.every((keep) => keep(row)))
+    const rows =
+      this.inserted ?? (fixtures.tables[this.table] ?? []).filter((row) => this.filters.every((keep) => keep(row)))
     if (this.patch) rows.forEach((row) => Object.assign(row, this.patch))
     if (this.mode === 'many') return result(rows)
     if (rows.length === 0 && this.mode === 'single') return result(null, { message: 'No rows found' })
