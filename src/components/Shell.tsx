@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { CircleSlash, House, Layers, Radio, Settings2, type LucideIcon } from 'lucide-react'
+import { CircleSlash, House, Layers, Radio, ScanLine, Settings2, type LucideIcon } from 'lucide-react'
 import { Booting } from './Booting'
 import { cn } from '../lib/cn'
 import { useSession } from '../lib/session'
@@ -18,6 +18,7 @@ interface NavItem {
 export const NAV: Record<Role, NavItem[]> = {
   student: [
     { to: '/', label: 'Home', icon: House, end: true },
+    { to: '/scan', label: 'Scan', icon: ScanLine, end: false },
     { to: '/courses', label: 'Courses', icon: Layers, end: false },
     { to: '/settings', label: 'Settings', icon: Settings2, end: false }
   ],

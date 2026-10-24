@@ -20,6 +20,7 @@ const Onboarding = lazy(() => import('./screens/Onboarding').then((m) => ({ defa
 const loadStudentCourses = () => import('./screens/student/Courses')
 const loadStudentCourseDetail = () => import('./screens/student/CourseDetail')
 const loadJoinLink = () => import('./screens/student/JoinLink')
+const loadScan = () => import('./screens/student/Scan')
 const loadSettings = () => import('./screens/Settings')
 const loadTeacherCourses = () => import('./screens/teacher/Courses')
 const loadTeacherCourseDetail = () => import('./screens/teacher/CourseDetail')
@@ -31,6 +32,8 @@ const StudentCourseDetail = lazy(() =>
   loadStudentCourseDetail().then((m) => ({ default: m.StudentCourseDetail }))
 )
 const JoinLink = lazy(() => loadJoinLink().then((m) => ({ default: m.JoinLink })))
+const Scan = lazy(() => loadScan().then((m) => ({ default: m.Scan })))
+const StudentSettings = lazy(() => loadSettings().then((m) => ({ default: m.StudentSettings })))
 const Settings = lazy(() => loadSettings().then((m) => ({ default: m.Settings })))
 const TeacherCourses = lazy(() => loadTeacherCourses().then((m) => ({ default: m.TeacherCourses })))
 const TeacherCourseDetail = lazy(() =>
@@ -42,7 +45,7 @@ const TeacherSessionDetail = lazy(() =>
 const TeacherLive = lazy(() => loadTeacherLive().then((m) => ({ default: m.TeacherLive })))
 
 const WARM: Record<Role, Array<() => Promise<unknown>>> = {
-  student: [loadStudentCourses, loadStudentCourseDetail, loadSettings],
+  student: [loadScan, loadStudentCourses, loadStudentCourseDetail, loadSettings],
   teacher: [loadTeacherCourseDetail, loadTeacherSession, loadTeacherLive, loadSettings]
 }
 
@@ -155,10 +158,11 @@ function StudentUpdates({ userId }: { userId: string }) {
 const studentRoutes = (
   <>
     <Route path="/" element={<StudentHome />} />
+    <Route path="/scan" element={<Scan />} />
     <Route path="/courses" element={<StudentCourses />} />
     <Route path="/courses/:id" element={<StudentCourseDetail />} />
     <Route path="/join/:code" element={<JoinLink />} />
-    <Route path="/settings" element={<Settings />} />
+    <Route path="/settings" element={<StudentSettings />} />
   </>
 )
 
