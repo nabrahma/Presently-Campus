@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronRight, Play, Radio } from 'lucide-react'
+import { ChevronRight, Play, QrCode, Radio } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { Empty } from '../../components/Empty'
 import { LoadError } from '../../components/LoadError'
@@ -10,7 +10,7 @@ import { ScreenHead } from '../../components/Shell'
 import { courseLabel } from '../../lib/api'
 import { useUserId } from '../../lib/session'
 import { startSession, useTeacherCourses } from '../../lib/teacher'
-import { liveSessionPath } from './CourseDetail'
+import { projectorPath, sessionPath } from './CourseDetail'
 
 /**
  * The classroom tab: whatever is running now, and one tap to start the next.
@@ -32,7 +32,7 @@ export function TeacherLive() {
     setStarting(courseId)
     try {
       const started = await startSession(userId, courseId)
-      navigate(liveSessionPath(started.session.id))
+      navigate(projectorPath(started.session.id))
     } catch (failure) {
       toast.error(failure instanceof Error ? failure.message : 'Could not start the session.')
     } finally {
@@ -63,16 +63,21 @@ export function TeacherLive() {
               <p className="py-4 text-[0.8rem] text-ink-muted">No session is open. Start one when class begins.</p>
             ) : (
               live.map(({ course, overview }) => (
-                <Link key={course.id} to={liveSessionPath(overview.openSessionId!)} className="block">
-                  <DataRow className="hover-row md:px-2">
-                    <Radio size={15} strokeWidth={2.2} className="shrink-0 text-accent" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-mono text-[0.82rem] text-ink uppercase">{courseLabel(course)}</p>
-                      <p className="mt-1 truncate text-[0.75rem] text-ink-muted">{course.name}</p>
-                    </div>
-                    <ChevronRight size={15} className="shrink-0 text-ink-faint" />
-                  </DataRow>
-                </Link>
+                <DataRow key={course.id}>
+                  <Radio size={15} strokeWidth={2.2} className="shrink-0 text-accent" />
+                  <Link to={sessionPath(overview.openSessionId!)} className="min-w-0 flex-1 active:opacity-60">
+                    <p className="truncate font-mono text-[0.82rem] text-ink uppercase">{courseLabel(course)}</p>
+                    <p className="mt-1 flex items-center gap-1 truncate text-[0.75rem] text-ink-muted">
+                      {course.name} <ChevronRight size={12} className="shrink-0" />
+                    </p>
+                  </Link>
+                  <Link
+                    to={projectorPath(overview.openSessionId!)}
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 font-mono text-[0.65rem] tracking-[0.1em] text-bg uppercase active:opacity-80"
+                  >
+                    <QrCode size={13} strokeWidth={2.4} /> Show code
+                  </Link>
+                </DataRow>
               ))
             )}
           </div>

@@ -26,6 +26,8 @@ const loadTeacherCourses = () => import('./screens/teacher/Courses')
 const loadTeacherCourseDetail = () => import('./screens/teacher/CourseDetail')
 const loadTeacherSession = () => import('./screens/teacher/SessionDetail')
 const loadTeacherLive = () => import('./screens/teacher/Live')
+const loadProjector = () => import('./screens/teacher/Projector')
+const loadApprovals = () => import('./screens/teacher/Approvals')
 
 const StudentCourses = lazy(() => loadStudentCourses().then((m) => ({ default: m.StudentCourses })))
 const StudentCourseDetail = lazy(() =>
@@ -43,10 +45,12 @@ const TeacherSessionDetail = lazy(() =>
   loadTeacherSession().then((m) => ({ default: m.TeacherSessionDetail }))
 )
 const TeacherLive = lazy(() => loadTeacherLive().then((m) => ({ default: m.TeacherLive })))
+const Projector = lazy(() => loadProjector().then((m) => ({ default: m.Projector })))
+const TeacherApprovals = lazy(() => loadApprovals().then((m) => ({ default: m.TeacherApprovals })))
 
 const WARM: Record<Role, Array<() => Promise<unknown>>> = {
   student: [loadScan, loadStudentCourses, loadStudentCourseDetail, loadSettings],
-  teacher: [loadTeacherCourseDetail, loadTeacherSession, loadTeacherLive, loadSettings]
+  teacher: [loadTeacherCourseDetail, loadProjector, loadTeacherSession, loadTeacherLive, loadApprovals, loadSettings]
 }
 
 /**
@@ -172,6 +176,7 @@ const teacherRoutes = (
     <Route path="/courses/:id" element={<TeacherCourseDetail />} />
     <Route path="/sessions/:id" element={<TeacherSessionDetail />} />
     <Route path="/live" element={<TeacherLive />} />
+    <Route path="/approvals" element={<TeacherApprovals />} />
     <Route path="/settings" element={<Settings />} />
   </>
 )
@@ -211,6 +216,19 @@ export default function App() {
           >
             {profile.role === 'teacher' ? teacherRoutes : studentRoutes}
           </Route>
+          {profile.role === 'teacher' ? (
+            /* The projector fills the screen, so it sits outside the shell. */
+            <Route
+              path="/live/:id"
+              element={
+                <Protected>
+                  <Suspense fallback={<Booting />}>
+                    <Projector />
+                  </Suspense>
+                </Protected>
+              }
+            />
+          ) : null}
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (

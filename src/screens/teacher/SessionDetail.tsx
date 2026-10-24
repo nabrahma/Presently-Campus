@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronLeft, Loader2 } from 'lucide-react'
+import { ChevronLeft, Loader2, QrCode } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { LoadError } from '../../components/LoadError'
@@ -92,9 +92,14 @@ export function TeacherSessionDetail() {
 
       <div className="mb-6 flex flex-wrap gap-3">
         {open ? (
-          <button type="button" className="btn-primary flex-1 md:flex-none" onClick={() => setConfirm('close')}>
-            Close session
-          </button>
+          <>
+            <Link to={`/live/${session.id}`} className="btn-primary flex-1 md:flex-none">
+              <QrCode size={15} strokeWidth={2.2} /> Show code
+            </Link>
+            <button type="button" className="btn-secondary flex-1 md:flex-none" onClick={() => setConfirm('close')}>
+              Close session
+            </button>
+          </>
         ) : null}
         {canReopen ? (
           <button type="button" className="btn-secondary flex-1 md:flex-none" onClick={() => void act('reopen')}>
