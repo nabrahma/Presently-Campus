@@ -8,6 +8,7 @@ import { QrCode } from '../../components/QrCode'
 import { courseLabel } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import { formatTime } from '../../lib/date'
+import { flagLabel } from '../../lib/flags'
 import { clockOffset, useRotatingToken, useWakeLock } from '../../lib/projector'
 import { useSession, useUserId } from '../../lib/session'
 import { closeSession, fetchLiveKey, useSessionDetail } from '../../lib/teacher'
@@ -120,6 +121,23 @@ export function Projector() {
           </div>
           <Countdown remaining={remaining} />
         </div>
+
+        {groups.flagged.length > 0 ? (
+          <div className="hidden md:block">
+            <p className="label text-warn">Recent flags · {groups.flagged.length}</p>
+            <ul className="mt-3 space-y-1.5">
+              {[...groups.flagged]
+                .sort((a, b) => (b.markedAt ?? '').localeCompare(a.markedAt ?? ''))
+                .slice(0, 3)
+                .map((row) => (
+                  <li key={row.studentId} className="flex gap-3 font-mono text-[0.7rem] text-ink-muted">
+                    <span className="w-[5.5rem] shrink-0 tabular-nums">{row.rollNumber}</span>
+                    <span className="truncate">{row.flags.map(flagLabel).join(' · ')}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className="space-y-3">
           <p className={cn('label flex items-center gap-1.5', online ? 'text-ink-faint' : 'text-warn')}>

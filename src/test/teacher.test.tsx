@@ -9,7 +9,7 @@ import App from '../App'
 import { clearRemoteCache } from '../lib/remote'
 import { SessionProvider } from '../lib/session'
 import { calls, setFixtures } from './fakeSupabase'
-import { course, STUDENT, teacherWorld } from './fixtures'
+import { course, reportRow, STUDENT, teacherWorld } from './fixtures'
 import { describeAgent } from '../screens/teacher/Approvals'
 
 vi.mock('../lib/supabaseClient', async (importOriginal) => {
@@ -131,6 +131,36 @@ describe('teacher session detail', () => {
 
     expect(await screen.findByText(/not marked yet · 2/i)).toBeTruthy()
     expect(screen.getByText(/present · 1/i)).toBeTruthy()
+  })
+})
+
+describe('flag review', () => {
+  it('explains a flag and removes the mark when the teacher calls it a proxy', async () => {
+    const world = teacherWorld()
+    setFixtures({
+      ...world,
+      rpc: {
+        ...world.rpc,
+        session_report: () => [
+          reportRow('s-a', '21CS10', 'Chen Li', 'present', { flags: ['shared_connection', 'late'] }),
+          reportRow('s-b', '21CS9', 'Bilal Khan', 'absent')
+        ]
+      }
+    })
+    const user = userEvent.setup()
+    mount('/sessions/live')
+
+    expect(await screen.findByText(/flagged · 1/i)).toBeTruthy()
+    expect(screen.getByText(/several students scanned from one connection/i)).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /proxy · mark absent/i }))
+    await waitFor(() =>
+      expect(calls).toContainEqual({
+        kind: 'rpc',
+        name: 'teacher_mark',
+        args: { p_session: 'live', p_student: 's-a', p_status: 'absent', p_reason: 'Reviewed flag: proxy' }
+      })
+    )
   })
 })
 

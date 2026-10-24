@@ -10,6 +10,7 @@ import { Sheet } from '../../components/Sheet'
 import { courseLabel } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import { formatSessionTime, formatTime } from '../../lib/date'
+import { FLAG_HELP, flagLabel, REVIEW_REASONS } from '../../lib/flags'
 import { useUserId } from '../../lib/session'
 import {
   cancelSession,
@@ -125,6 +126,35 @@ export function TeacherSessionDetail() {
         </Panel>
       </div>
 
+      {groups.flagged.length > 0 && session.status !== 'cancelled' ? (
+        <div className="mb-7">
+          <SectionHead label={`Flagged · ${groups.flagged.length}`} />
+          <p className="pt-2 text-[0.72rem] leading-relaxed text-ink-faint">
+            Flags never block a scan. Keep the mark if it looks genuine, or remove it if it was a proxy.
+          </p>
+          {groups.flagged.map((row) => (
+            <FlaggedRow
+              key={row.studentId}
+              row={row}
+              onReview={async (verdict) => {
+                try {
+                  await teacherMark(
+                    userId,
+                    session.id,
+                    row.studentId,
+                    verdict === 'genuine' ? 'present' : 'absent',
+                    REVIEW_REASONS[verdict]
+                  )
+                  toast.success(verdict === 'genuine' ? `${row.fullName}: kept` : `${row.fullName}: marked absent`)
+                } catch (failure) {
+                  toast.error(failure instanceof Error ? failure.message : 'That did not work.')
+                }
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
+
       <div className="space-y-7 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
         <ReportList
           label={open ? 'Not marked yet' : 'Absent'}
@@ -199,9 +229,10 @@ export function groupReport(report: SessionReportRow[]) {
   const excused = report.filter((row) => row.status === 'excused')
   const absent = report.filter((row) => row.status === 'absent' && !row.joinedAfterStart)
   const notExpected = report.filter((row) => row.status === 'absent' && row.joinedAfterStart)
+  const flagged = present.filter((row) => row.flags.length > 0)
   // Who this session counts for: everyone enrolled before it, plus anyone marked anyway.
   const expected = report.length - notExpected.length - excused.length
-  return { present, excused, absent, notExpected, expected }
+  return { present, excused, absent, notExpected, expected, flagged }
 }
 
 function ReportList({
@@ -243,10 +274,63 @@ function ReportList({
                 </span>
               ) : null}
             </span>
-            {row.flags.length > 0 ? <span className="label text-warn">Flagged</span> : null}
+            {row.flags.length > 0 ? <span className="label text-warn">{row.flags.map(flagLabel).join(' · ')}</span> : null}
           </button>
         ))
       )}
+    </div>
+  )
+}
+
+function FlaggedRow({
+  row,
+  onReview
+}: {
+  row: SessionReportRow
+  onReview: (verdict: 'genuine' | 'proxy') => Promise<void>
+}) {
+  const [busy, setBusy] = useState(false)
+  const review = async (verdict: 'genuine' | 'proxy') => {
+    setBusy(true)
+    try {
+      await onReview(verdict)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="border-b border-line py-4 last:border-b-0">
+      <div className="flex items-baseline gap-3">
+        <span className="w-[5.5rem] shrink-0 font-mono text-[0.72rem] text-ink-muted tabular-nums">{row.rollNumber}</span>
+        <span className="min-w-0 flex-1 truncate text-[0.88rem]">{row.fullName}</span>
+        {row.markedAt ? <span className="font-mono text-[0.65rem] text-ink-faint">{formatTime(row.markedAt)}</span> : null}
+      </div>
+      <ul className="mt-2 space-y-1">
+        {row.flags.map((flag) => (
+          <li key={flag} className="text-[0.72rem] leading-relaxed text-ink-muted">
+            <span className="text-warn">{flagLabel(flag)}.</span> {FLAG_HELP[flag] ?? ''}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void review('genuine')}
+          className="h-10 flex-1 rounded-full border border-line-strong font-mono text-[0.65rem] tracking-[0.1em] uppercase active:opacity-60 disabled:opacity-40"
+        >
+          Looks genuine
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void review('proxy')}
+          className="h-10 flex-1 rounded-full border border-danger/40 font-mono text-[0.65rem] tracking-[0.1em] text-danger uppercase active:opacity-60 disabled:opacity-40"
+        >
+          Proxy · mark absent
+        </button>
+      </div>
     </div>
   )
 }
