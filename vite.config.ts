@@ -33,9 +33,9 @@ export default defineConfig({
       },
       manifest: {
         id: '/',
-        name: 'Presently — Attendance Tracker',
-        short_name: 'Presently',
-        description: 'Know exactly how many classes you can miss, and how many you need.',
+        name: 'Presently Campus — Class Attendance',
+        short_name: 'Campus',
+        description: 'QR attendance for classes, with every subject’s standing for teachers and students.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
