@@ -8,10 +8,10 @@ import {
   useState,
   type ReactNode
 } from 'react'
-import { ApiError, fetchProfile, updateProfile } from './api'
+import { ApiError, fetchProfile, run, updateProfile } from './api'
 import { clearRemoteCache } from './remote'
 import { ensureFreshSession, isCloudEnabled, supabase } from './supabaseClient'
-import type { Profile } from '../types'
+import type { Profile, Role } from '../types'
 
 interface Session {
   /** False until it is known whether someone is signed in, and who. */
@@ -26,6 +26,8 @@ interface Session {
   profileError: string | null
   saveProfile: (changes: { fullName: string; rollNumber?: string | null }) => Promise<void>
   reloadProfile: () => Promise<void>
+  /** Developers only: show the app as a teacher or as a student sees it. */
+  switchView: (role: Role) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -157,6 +159,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (userId) await loadProfile(userId)
   }, [loadProfile, userId])
 
+  const switchView = useCallback(
+    async (role: Role) => {
+      if (!userId) throw new ApiError('Sign in first.')
+      // The server changes the account's role, so every rule then applies
+      // exactly as it would to a real teacher or student.
+      await run((db) => db.rpc('set_dev_view', { p_role: role }))
+      // Cached screens belong to the other view; none of them carry over.
+      clearRemoteCache()
+      await loadProfile(userId)
+    },
+    [loadProfile, userId]
+  )
+
   const signOut = useCallback(async () => {
     // Local data goes first: if the request fails, this device must still
     // stop showing the previous person's attendance.
@@ -183,9 +198,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       profileError,
       saveProfile,
       reloadProfile,
+      switchView,
       signOut
     }),
-    [email, hydrated, online, profile, profileError, reloadProfile, saveProfile, signOut, userId]
+    [email, hydrated, online, profile, profileError, reloadProfile, saveProfile, signOut, switchView, userId]
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

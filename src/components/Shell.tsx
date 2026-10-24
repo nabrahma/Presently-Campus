@@ -2,6 +2,7 @@ import { Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
 import { CircleSlash, House, Layers, Moon, Radio, ScanLine, Settings2, ShieldCheck, Sun, type LucideIcon } from 'lucide-react'
 import { Booting } from './Booting'
+import { DevSwitch } from './DevSwitch'
 import { Logo } from './Logo'
 import { cn } from '../lib/cn'
 import { setAppearance, useShownTheme } from '../lib/appearance'
@@ -95,7 +96,7 @@ export function Shell() {
         </nav>
 
         <div className="mt-auto hidden md:block">
-          <AccountCard name={profile?.fullName ?? ''} role={role} />
+          <AccountCard name={profile?.fullName ?? ''} role={role} dev={profile?.isDev ?? false} />
         </div>
       </aside>
 
@@ -126,6 +127,7 @@ export function Shell() {
 
           <div className="flex shrink-0 items-center gap-2">
             {online ? null : <OfflineFlag />}
+            <DevSwitch compact />
             <ThemeToggle />
           </div>
         </header>
@@ -208,7 +210,7 @@ function ThemeToggle() {
   )
 }
 
-function AccountCard({ name, role }: { name: string; role: Role }) {
+function AccountCard({ name, role, dev }: { name: string; role: Role; dev: boolean }) {
   const initials =
     name
       .split(/\s+/)
@@ -227,7 +229,9 @@ function AccountCard({ name, role }: { name: string; role: Role }) {
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[0.95rem] font-semibold">{name || 'Your account'}</span>
-        <span className="block text-[0.85rem] text-ink-muted">{role === 'teacher' ? 'Teacher' : 'Student'}</span>
+        <span className="block text-[0.85rem] text-ink-muted">
+          {dev ? `Dev · ${role} view` : role === 'teacher' ? 'Teacher' : 'Student'}
+        </span>
       </span>
     </NavLink>
   )

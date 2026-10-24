@@ -12,6 +12,8 @@ export interface Profile {
    * and a roll number, because that is how they appear on a roster.
    */
   onboarded: boolean
+  /** One of the developers, who can switch between the teacher's and the student's view. */
+  isDev: boolean
 }
 
 export interface Course {

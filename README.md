@@ -112,6 +112,15 @@ your own; never reuse the live Presently ones.
 
    A teacher already signed up as a student is promoted the moment their email
    is added.
+
+   The people building the app go on a separate dev list instead. A dev is not
+   a teacher: they get a Teacher / Student switch in the top bar and in
+   Settings, and the server treats them exactly as whichever they are viewing
+   as.
+
+   ```sql
+   insert into dev_allowlist (email) values ('developer@college.ac.in');
+   ```
 5. **Vercel.** Import the repository and set `VITE_SUPABASE_URL` and
    `VITE_SUPABASE_ANON_KEY` for Production, Preview and Development, all pointing
    at the Presently Campus project. `vercel.json` handles routing, caching and

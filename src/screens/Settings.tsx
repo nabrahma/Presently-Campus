@@ -5,6 +5,7 @@ import { Check, LogOut, Monitor, Moon, Smartphone, Sun, type LucideIcon } from '
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ActionRow, DataRow, Panel, SectionHead } from '../components/Panel'
 import { PrivacyNotice } from '../components/PrivacyNotice'
+import { DevSwitch } from '../components/DevSwitch'
 import { PhonePanel } from '../components/PhonePanel'
 import { ScreenHead } from '../components/Shell'
 import { useAppearance, type TextSize, type ThemeChoice } from '../lib/appearance'
@@ -106,6 +107,8 @@ export function Settings({ children }: { children?: ReactNode }) {
           </Panel>
 
           {children}
+
+          {profile?.isDev ? <DeveloperPanel /> : null}
 
           <AppearancePanel />
         </div>
@@ -232,6 +235,26 @@ function Choice({ selected, onSelect, children }: { selected: boolean; onSelect:
     >
       {children}
     </button>
+  )
+}
+
+/** Only the developers see this: the switch, and what it does. */
+function DeveloperPanel() {
+  return (
+    <Panel className="border-accent-bright/40 p-5 md:p-6">
+      <div className="flex items-center gap-2.5">
+        <h2 className="title text-[1.25rem]">Developer view</h2>
+        <span className="chip bg-accent-wash text-accent">Dev</span>
+      </div>
+      <p className="mt-1 text-[1rem] leading-relaxed text-ink-muted">
+        Switch your account between the teacher’s app and the student’s app. The server treats you exactly
+        as one or the other, so you can join courses, register a phone and scan as a student, and run
+        sessions as a teacher. The same switch is in the top bar.
+      </p>
+      <div className="mt-4">
+        <DevSwitch />
+      </div>
+    </Panel>
   )
 }
 
