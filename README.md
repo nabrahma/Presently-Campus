@@ -77,8 +77,9 @@ and registration rule in Node as well.
 One college, one deployment. You need a Supabase project and a Vercel project of
 your own; never reuse the live Presently ones.
 
-1. **Supabase project.** Create it, then put its ref in `.vscode/mcp.json` in
-   place of `REPLACE_WITH_CAMPUS_PROJECT_REF`.
+1. **Supabase project.** Create it. MCP server configs (`.mcp.json`,
+   `.vscode/mcp.json`) are local tooling and are not committed; point yours at
+   the new project's ref.
 2. **Schema and functions.** With the [Supabase CLI](https://supabase.com/docs/guides/cli):
 
    ```bash
