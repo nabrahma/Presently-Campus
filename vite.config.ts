@@ -56,7 +56,9 @@ export default defineConfig({
     // Pure logic runs in Node; anything that renders opts into jsdom with a
     // `@vitest-environment` comment, which keeps the fast tests fast.
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}'],
+    // The Edge Functions' shared logic is plain TypeScript and is tested here
+    // too, so `npm run check` covers the server's rules as well as the app's.
+    include: ['src/**/*.test.{ts,tsx}', 'supabase/functions/_shared/**/*.test.ts'],
     setupFiles: ['src/test/setup.ts'],
     // Generous, because the render suites pay for on-demand chunk transforms.
     testTimeout: 30_000

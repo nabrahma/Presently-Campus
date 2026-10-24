@@ -54,6 +54,10 @@ class Query implements PromiseLike<{ data: unknown; error: { message: string } |
     this.filters.push((row) => row[column] === value)
     return this
   }
+  neq(column: string, value: unknown) {
+    this.filters.push((row) => row[column] !== value)
+    return this
+  }
   in(column: string, values: unknown[]) {
     this.filters.push((row) => values.includes(row[column]))
     return this

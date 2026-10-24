@@ -56,6 +56,10 @@ describe('signing in', () => {
     await user.type(screen.getByLabelText(/roll number/i), '21cs001')
     await user.click(screen.getByRole('button', { name: /continue/i }))
 
+    // A student is then asked to register the phone they scan with.
+    expect(await screen.findByRole('heading', { name: /register this phone/i })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /do it later/i }))
+
     expect(await screen.findByText('Least spare')).toBeTruthy()
     expect(calls).toContainEqual({
       kind: 'update',
@@ -85,13 +89,13 @@ describe('student home', () => {
     expect(screen.getByText(/courses · 1/i)).toBeTruthy()
   })
 
-  it('docks Home, Courses and Settings for a student', async () => {
+  it('docks Home, Scan, Courses and Settings for a student', async () => {
     setFixtures(studentWorld())
     mount('/')
     await screen.findByText('Least spare')
 
     const nav = screen.getByRole('navigation')
-    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Home', 'Courses', 'Settings'])
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Home', 'Scan', 'Courses', 'Settings'])
   })
 })
 

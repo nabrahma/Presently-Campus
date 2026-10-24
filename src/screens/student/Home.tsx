@@ -1,22 +1,25 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Layers, Radio } from 'lucide-react'
+import { ChevronRight, Layers, Radio, ScanLine, TriangleAlert } from 'lucide-react'
 import { Booting } from '../../components/Booting'
 import { Empty } from '../../components/Empty'
 import { Gauge, Meter } from '../../components/Gauge'
 import { LoadError } from '../../components/LoadError'
 import { MarginNote, Percent } from '../../components/Margin'
+import { describePhone } from '../../components/PhonePanel'
 import { DataRow, Panel, Readout, SectionHead } from '../../components/Panel'
 import { ScreenHead } from '../../components/Shell'
 import { courseLabel } from '../../lib/api'
 import { figuresStats, safetyZone, standings, type AttendanceStats } from '../../lib/attendanceMath'
 import { formatDayMonth, formatTime, formatWeekday, keyToDate } from '../../lib/date'
+import { usePhoneStatus, type PhoneStatus } from '../../lib/devices'
 import { openClasses, useStudentData, type OpenClass, type StudentCourse } from '../../lib/student'
 import { useTodayKey } from '../../lib/useTodayKey'
 
 export function StudentHome() {
   const date = useTodayKey()
   const { data, error, refresh } = useStudentData()
+  const { status: phone } = usePhoneStatus()
 
   /*
     Colleges hold each course to its own target, so the summary is per course:
@@ -84,6 +87,8 @@ export function StudentHome() {
         </div>
 
         <div className="min-w-0 lg:flex-1">
+          {phone ? <PhoneWarning status={phone} /> : null}
+
           {live.length > 0 ? (
             <div className="mt-7 space-y-3 lg:mt-0">
               {live.map((entry) => (
@@ -150,7 +155,30 @@ function LiveClass({ entry }: { entry: OpenClass }) {
             ? 'Excused by your teacher'
             : 'Not marked yet'}
       </p>
+      {entry.mark ? null : (
+        <Link to="/scan" className="btn-primary mt-4 w-full">
+          <ScanLine size={16} strokeWidth={2.2} /> Scan
+        </Link>
+      )}
     </Panel>
+  )
+}
+
+/** Shown only when this phone cannot mark attendance at all. */
+function PhoneWarning({ status }: { status: PhoneStatus }) {
+  if (status.kind === 'active' || status.kind === 'cooling' || status.kind === 'pending') return null
+  const copy = describePhone(status)
+
+  return (
+    <Link
+      to="/settings"
+      className="mt-7 flex items-start gap-2.5 rounded-2xl border border-warn/40 px-4 py-3 active:opacity-60 lg:mt-0 lg:mb-7"
+    >
+      <TriangleAlert size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-warn" />
+      <span className="text-[0.76rem] leading-relaxed text-ink-muted">
+        <span className="text-warn">{copy.label}.</span> {copy.action ?? 'See Settings'} to mark attendance from this phone.
+      </span>
+    </Link>
   )
 }
 

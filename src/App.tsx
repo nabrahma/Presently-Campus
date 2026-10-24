@@ -20,17 +20,22 @@ const Onboarding = lazy(() => import('./screens/Onboarding').then((m) => ({ defa
 const loadStudentCourses = () => import('./screens/student/Courses')
 const loadStudentCourseDetail = () => import('./screens/student/CourseDetail')
 const loadJoinLink = () => import('./screens/student/JoinLink')
+const loadScan = () => import('./screens/student/Scan')
 const loadSettings = () => import('./screens/Settings')
 const loadTeacherCourses = () => import('./screens/teacher/Courses')
 const loadTeacherCourseDetail = () => import('./screens/teacher/CourseDetail')
 const loadTeacherSession = () => import('./screens/teacher/SessionDetail')
 const loadTeacherLive = () => import('./screens/teacher/Live')
+const loadProjector = () => import('./screens/teacher/Projector')
+const loadApprovals = () => import('./screens/teacher/Approvals')
 
 const StudentCourses = lazy(() => loadStudentCourses().then((m) => ({ default: m.StudentCourses })))
 const StudentCourseDetail = lazy(() =>
   loadStudentCourseDetail().then((m) => ({ default: m.StudentCourseDetail }))
 )
 const JoinLink = lazy(() => loadJoinLink().then((m) => ({ default: m.JoinLink })))
+const Scan = lazy(() => loadScan().then((m) => ({ default: m.Scan })))
+const StudentSettings = lazy(() => loadSettings().then((m) => ({ default: m.StudentSettings })))
 const Settings = lazy(() => loadSettings().then((m) => ({ default: m.Settings })))
 const TeacherCourses = lazy(() => loadTeacherCourses().then((m) => ({ default: m.TeacherCourses })))
 const TeacherCourseDetail = lazy(() =>
@@ -40,10 +45,12 @@ const TeacherSessionDetail = lazy(() =>
   loadTeacherSession().then((m) => ({ default: m.TeacherSessionDetail }))
 )
 const TeacherLive = lazy(() => loadTeacherLive().then((m) => ({ default: m.TeacherLive })))
+const Projector = lazy(() => loadProjector().then((m) => ({ default: m.Projector })))
+const TeacherApprovals = lazy(() => loadApprovals().then((m) => ({ default: m.TeacherApprovals })))
 
 const WARM: Record<Role, Array<() => Promise<unknown>>> = {
-  student: [loadStudentCourses, loadStudentCourseDetail, loadSettings],
-  teacher: [loadTeacherCourseDetail, loadTeacherSession, loadTeacherLive, loadSettings]
+  student: [loadScan, loadStudentCourses, loadStudentCourseDetail, loadSettings],
+  teacher: [loadTeacherCourseDetail, loadProjector, loadTeacherSession, loadTeacherLive, loadApprovals, loadSettings]
 }
 
 /**
@@ -155,10 +162,11 @@ function StudentUpdates({ userId }: { userId: string }) {
 const studentRoutes = (
   <>
     <Route path="/" element={<StudentHome />} />
+    <Route path="/scan" element={<Scan />} />
     <Route path="/courses" element={<StudentCourses />} />
     <Route path="/courses/:id" element={<StudentCourseDetail />} />
     <Route path="/join/:code" element={<JoinLink />} />
-    <Route path="/settings" element={<Settings />} />
+    <Route path="/settings" element={<StudentSettings />} />
   </>
 )
 
@@ -168,6 +176,7 @@ const teacherRoutes = (
     <Route path="/courses/:id" element={<TeacherCourseDetail />} />
     <Route path="/sessions/:id" element={<TeacherSessionDetail />} />
     <Route path="/live" element={<TeacherLive />} />
+    <Route path="/approvals" element={<TeacherApprovals />} />
     <Route path="/settings" element={<Settings />} />
   </>
 )
@@ -207,6 +216,19 @@ export default function App() {
           >
             {profile.role === 'teacher' ? teacherRoutes : studentRoutes}
           </Route>
+          {profile.role === 'teacher' ? (
+            /* The projector fills the screen, so it sits outside the shell. */
+            <Route
+              path="/live/:id"
+              element={
+                <Protected>
+                  <Suspense fallback={<Booting />}>
+                    <Projector />
+                  </Suspense>
+                </Protected>
+              }
+            />
+          ) : null}
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (

@@ -5,7 +5,9 @@ import { Check, LogOut, Smartphone } from 'lucide-react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { DataRow, Panel, SectionHead } from '../components/Panel'
 import { PrivacyNotice } from '../components/PrivacyNotice'
+import { PhonePanel } from '../components/PhonePanel'
 import { ScreenHead } from '../components/Shell'
+import { usePhoneStatus } from '../lib/devices'
 import { cn } from '../lib/cn'
 import { useSession } from '../lib/session'
 import { useInstallPrompt } from '../lib/useInstallPrompt'
@@ -157,6 +159,16 @@ export function Settings({ children }: { children?: ReactNode }) {
         }}
       />
     </>
+  )
+}
+
+/** A student's settings carry this phone's registration. */
+export function StudentSettings() {
+  const { status } = usePhoneStatus()
+  return (
+    <Settings>
+      <PhonePanel status={status} />
+    </Settings>
   )
 }
 

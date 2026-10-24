@@ -291,3 +291,85 @@ export async function setEnrolment(
   )
   await refreshAll(userId)
 }
+
+/* -------------------------------------------------------------------------- */
+/* Projector                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export interface LiveKey {
+  secret: string
+  serverTime: number
+  /** This device's clock at either end of the request, to correct against. */
+  sentAt: number
+  receivedAt: number
+}
+
+/** The session's secret and the server's time, for a projector resuming a session. */
+export async function fetchLiveKey(sessionId: string): Promise<LiveKey> {
+  const sentAt = Date.now()
+  const answer = (await run((db) => db.rpc('live_session_key', { p_session: sessionId }))) as Row
+  return { secret: String(answer.secret), serverTime: number(answer.server_time), sentAt, receivedAt: Date.now() }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phone approvals                                                             */
+/* -------------------------------------------------------------------------- */
+
+export interface PhoneRequest {
+  deviceId: string
+  studentId: string
+  fullName: string
+  rollNumber: string
+  /** A device change waits for approval; a first phone is cooling off. */
+  kind: 'change' | 'first'
+  requestedAt: string
+  activeFrom: string | null
+  userAgent: string | null
+  /** For a device change, when the phone it replaces was registered. */
+  replacesSince: string | null
+}
+
+const approvalsKey = (userId: string) => `${teacherPrefix(userId)}:approvals`
+
+export async function loadPhoneRequests(now = Date.now()): Promise<PhoneRequest[]> {
+  // Row Level Security limits this to students in the teacher's courses.
+  const rows = (await run((db) =>
+    db
+      .from('devices')
+      .select('*, student:profiles!devices_student_id_fkey(full_name, roll_number)')
+      .neq('status', 'revoked')
+      .order('created_at', { ascending: true })
+  )) as Row[]
+
+  const activeSince = new Map(
+    rows.filter((row) => row.status === 'active').map((row) => [String(row.student_id), String(row.created_at)])
+  )
+
+  return rows
+    .filter((row) => row.status === 'pending' || (row.status === 'active' && Date.parse(String(row.active_from)) > now))
+    .map((row) => {
+      const student = (row.student as Row | null) ?? {}
+      const change = row.status === 'pending'
+      return {
+        deviceId: String(row.id),
+        studentId: String(row.student_id),
+        fullName: String(student.full_name ?? ''),
+        rollNumber: String(student.roll_number ?? ''),
+        kind: change ? 'change' : 'first',
+        requestedAt: String(row.created_at),
+        activeFrom: row.active_from ? String(row.active_from) : null,
+        userAgent: row.user_agent ? String(row.user_agent) : null,
+        replacesSince: change ? (activeSince.get(String(row.student_id)) ?? null) : null
+      }
+    })
+}
+
+export function usePhoneRequests() {
+  const userId = useUserId()
+  return useRemote(approvalsKey(userId), () => loadPhoneRequests())
+}
+
+export async function decidePhone(userId: string, deviceId: string, approve: boolean): Promise<void> {
+  await run((db) => db.rpc(approve ? 'approve_device' : 'reject_device', { p_device: deviceId }))
+  await refreshAll(userId)
+}

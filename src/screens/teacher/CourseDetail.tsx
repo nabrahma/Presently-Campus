@@ -25,7 +25,9 @@ import {
 } from '../../lib/teacher'
 import type { Course } from '../../types'
 
-export const liveSessionPath = (sessionId: string) => `/sessions/${sessionId}`
+export const sessionPath = (sessionId: string) => `/sessions/${sessionId}`
+/** The full-screen QR code for a running session. */
+export const projectorPath = (sessionId: string) => `/live/${sessionId}`
 
 export function TeacherCourseDetail() {
   const { id } = useParams()
@@ -73,7 +75,7 @@ export function TeacherCourseDetail() {
     setStarting(true)
     try {
       const started = await startSession(userId, course.id)
-      navigate(liveSessionPath(started.session.id))
+      navigate(projectorPath(started.session.id))
     } catch (failure) {
       toast.error(failure instanceof Error ? failure.message : 'Could not start the session.')
     } finally {
@@ -124,7 +126,7 @@ export function TeacherCourseDetail() {
       </header>
 
       {open ? (
-        <Link to={liveSessionPath(open.sessionId)} className="btn-primary mb-6 w-full md:w-auto">
+        <Link to={projectorPath(open.sessionId)} className="btn-primary mb-6 w-full md:w-auto">
           <Radio size={15} strokeWidth={2.2} /> Open live session · {open.present}/{open.expected - open.excused}
         </Link>
       ) : course.archived ? null : (
@@ -337,7 +339,7 @@ const STATUS_LABEL: Record<SessionSummary['status'], string> = {
 
 function SessionLine({ session }: { session: SessionSummary }) {
   return (
-    <Link to={liveSessionPath(session.sessionId)} className="block">
+    <Link to={sessionPath(session.sessionId)} className="block">
       <div className="hover-row flex items-center gap-3 border-b border-line py-3 last:border-b-0 md:px-2">
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[0.76rem] text-ink tabular-nums">{formatSessionTime(session.startedAt)}</p>
