@@ -4,10 +4,10 @@
  */
 export function PrivacyNotice({ role }: { role: 'student' | 'teacher' }) {
   return (
-    <div className="rounded-2xl border border-line px-4 py-4">
-      <p className="label">What is recorded</p>
+    <div className="inset px-5 py-5">
+      <p className="title text-[1.0625rem]">What is recorded</p>
       {role === 'student' ? (
-        <ul className="mt-3 space-y-2 text-[0.78rem] leading-relaxed text-ink-muted">
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-[0.975rem] leading-relaxed text-ink-muted">
           <li>Your name, roll number and email, so your teachers can see your attendance.</li>
           <li>
             A key that identifies this phone, so only you can mark from it. The phone keeps the
@@ -20,7 +20,7 @@ export function PrivacyNotice({ role }: { role: 'student' | 'teacher' }) {
           <li>No photos, no location and no biometric data.</li>
         </ul>
       ) : (
-        <ul className="mt-3 space-y-2 text-[0.78rem] leading-relaxed text-ink-muted">
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-[0.975rem] leading-relaxed text-ink-muted">
           <li>Your name and email, shown to students in your courses.</li>
           <li>The sessions you run and every mark you make or change, with its reason.</li>
         </ul>

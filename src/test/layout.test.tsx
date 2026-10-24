@@ -106,7 +106,8 @@ describe('the scroll chain', () => {
     const nav = screen.getByRole('navigation')
     // Inside the scroll region the dock would scroll away with the content.
     expect(document.querySelector('main.scroll-region')!.contains(nav)).toBe(false)
-    expect(classesOf(nav).map(bare)).toContain('shrink-0')
+    // The bar (or sidebar) holding the links is what must not shrink.
+    expect(classesOf(nav.closest('aside')!).map(bare)).toContain('shrink-0')
   })
 })
 
