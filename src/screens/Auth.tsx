@@ -6,7 +6,7 @@ import { Frame } from '../components/Frame'
 import { Logo } from '../components/Logo'
 import { cn } from '../lib/cn'
 import { useSession } from '../lib/session'
-import { describeError, supabase } from '../lib/supabaseClient'
+import { describeError, linkError, supabase } from '../lib/supabaseClient'
 
 type Mode = 'signIn' | 'signUp'
 type Method = 'link' | 'password'
@@ -22,7 +22,9 @@ export function Auth() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  // A link that failed on the way in explains itself here instead of silently
+  // showing the sign-in form again.
+  const [error, setError] = useState(linkError ?? '')
   const [sentTo, setSentTo] = useState('')
   const [cooldown, setCooldown] = useState(0)
   const timerRef = useRef<number | null>(null)
@@ -117,7 +119,7 @@ export function Auth() {
         <h1 className="title mt-7 text-[2rem]">Check your email</h1>
         <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink-muted">
           We sent a sign-in link to <span className="font-semibold text-ink">{sentTo}</span>. Open the
-          email on this device and tap the link to continue.
+          email and tap the link. It signs in whichever device you open it on, phone or computer.
         </p>
         <button
           type="button"
