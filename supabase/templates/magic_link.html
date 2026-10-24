@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f1f1ee;font-family:Arial,Helvetica,sans-serif;color:#17171a">
+    <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e1;border-radius:20px;padding:32px">
+      <p style="margin:0 0 4px;font-size:15px;color:#4c4c53">Presently Campus</p>
+      <h1 style="margin:0 0 20px;font-size:26px">Your sign-in code</h1>
+      <p style="margin:0 0 12px;font-size:17px;line-height:1.5">
+        Type this code into the app on the device you are signing in on:
+      </p>
+      <p style="margin:0 0 24px;font-size:40px;font-weight:bold;letter-spacing:10px;font-family:'Courier New',monospace">{{ .Token }}</p>
+      <p style="margin:0 0 16px;font-size:17px;line-height:1.5">Or, on this device, tap the button:</p>
+      <p style="margin:0 0 28px">
+        <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#17171a;color:#ffffff;text-decoration:none;font-size:17px;font-weight:bold;padding:16px 28px;border-radius:999px">Sign in to Presently Campus</a>
+      </p>
+      <p style="margin:0;font-size:14px;line-height:1.5;color:#4c4c53">
+        The code and the button work once and expire after an hour. If you did not ask to sign in, ignore this email.
+      </p>
+    </div>
+  </body>
+</html>

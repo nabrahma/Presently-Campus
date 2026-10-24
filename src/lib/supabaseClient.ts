@@ -24,12 +24,37 @@ function create(): SupabaseClient | null {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      // Magic links land back on the app with a code that must be exchanged
-      // for a session before anything can be read.
       detectSessionInUrl: true,
-      flowType: 'pkce'
+      /*
+        Implicit, not PKCE. A PKCE link only completes in the browser that
+        asked for it, because that browser holds the other half of the code.
+        People ask on a laptop and open the email on a phone, or in their mail
+        app's own browser, and the link then did nothing at all. An implicit
+        link carries the session itself, so it signs in wherever it is opened.
+      */
+      flowType: 'implicit'
     }
   })
+}
+
+/**
+ * Why the sign-in link that opened this page failed, if it did: expired, used
+ * already, or opened twice. Read before anything navigates, because the app
+ * redirects to the sign-in screen and the reason would go with the old URL.
+ */
+export const linkError: string | null = readLinkError()
+
+function readLinkError(): string | null {
+  if (typeof window === 'undefined') return null
+  const params = new URLSearchParams(window.location.hash.slice(1))
+  const query = new URLSearchParams(window.location.search)
+  const code = params.get('error_code') ?? query.get('error_code')
+  const description = params.get('error_description') ?? query.get('error_description')
+  if (!code && !description) return null
+  if (code === 'otp_expired' || /expired|invalid/i.test(description ?? '')) {
+    return 'That sign-in link has expired or was already used. Send yourself a new one below.'
+  }
+  return description ?? 'That sign-in link did not work. Send yourself a new one below.'
 }
 
 export const supabase = create()
