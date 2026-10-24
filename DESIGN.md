@@ -1,116 +1,108 @@
-# Presently — Technical Design
+# Presently Campus — Technical Design
 
 ## What this is
 
-A personal attendance tracker, mobile-first, installable, backed by a private account. It covers subject timetables, a one-tap daily check-in, calendar backfilling, and the per-subject safety margin against a target. Every subject is judged on its own, as colleges judge it; there is no pooled overall figure.
+A web app (installable PWA) that takes class attendance by QR scan and shows it
+per subject to the teacher and the student. One college per deployment. The
+requirements are in [Presently-Campus-PRD.md](Presently-Campus-PRD.md); this
+document records how they are met and why.
 
-It deliberately excludes institution integrations, social features, notifications, native apps, and anything resembling a timetable-scheduling engine.
-
-## Constraints
-
-- Personal-scale software, deployed as a static site with a hosted Postgres behind it.
-- The device's local calendar day is the authority for what "today" means.
-- Offline support means: read what you have, write optimistically, retry on reconnect. It is not a conflict-resolution system.
-- Baselines, not stretch goals: a 360px viewport, keyboard and screen-reader access, colour never carrying meaning alone, per-user data isolation at the database level, and a small dependency footprint.
+The governing rule: **the client is never trusted to decide whether a mark is
+valid.** Every rule that stops a proxy runs on the server.
 
 ## Decisions
 
 | Decision | Alternatives | Reason |
 | --- | --- | --- |
-| Vite React client talking straight to Supabase | Custom backend; IndexedDB-only | Meets the auth and privacy requirements with the least to maintain. |
-| Hand-rolled store with an outbox | TanStack Query; Redux | The hard part here is offline write ordering, not caching. An outbox models that directly; a query cache would sit beside it rather than solve it. |
-| Tailwind v4 over CSS custom properties | Hand-written CSS; a component library | One token layer defines the palette; utilities compose it. The colour system stays a single source of truth and the bundle stays small. |
-| Vaul for sheets | A hand-rolled dialog; Radix directly | Drag-to-dismiss is the single biggest thing separating an installed app from a website. Vaul wraps Radix Dialog, so focus trapping, Escape and scroll lock come with it. |
-| Motion for transitions | CSS transitions | A shared-element indicator that slides between tabs cannot be expressed in CSS without duplicating layout maths. |
-| Dark only | A theme switcher | The product has one visual identity. A second theme doubles the surface to design, test and get wrong, for a preference this app does not need. |
-| Persistent layout route for the shell | A wrapper each screen imports | A wrapper remounts the header and dock on every navigation, which is what makes a PWA read as a website. |
-| Pure, shared attendance module | Per-screen calculation | Guarantees every screen shows the same number and makes the formulas directly testable. |
-| Integer arithmetic in the maths module | Fractional target | `0.75 × 20` is `14.999999999999998` in floating point, which silently breaks the exactly-on-target case. |
+| Vite React client on Supabase (Postgres, Auth, Edge Functions, Realtime) | A custom backend | Row Level Security expresses who-may-read-what next to the data, and the two places that need server code get Edge Functions. |
+| Clients have no write grant on attendance, devices or sessions | RLS insert policies | A policy can check *who* writes, not *whether a scan was valid*. Writes go through a security definer function that checks the caller, or the service-role Edge Function. |
+| Absence is computed, never stored | An absent row per student per session | Rows exist only for something that happened. Closing a session needs no fan-out, and a late joiner is never "absent" from classes before they joined. |
+| One definition of the figures, `private.course_figures` | Counting in each report | The roster, the course overview, the student's own figures and the export cannot disagree. |
+| The existing attendance maths, unchanged | New maths for counts | `figuresStats` feeds server counts into `attendanceStats`, so margins are worked out exactly as in Presently, in integer space. |
+| Rotating HMAC tokens signed on the teacher's device | Fetching each code from the server | The projector keeps rotating offline. One module, `qrToken.ts`, signs in the browser and verifies in the Edge Function. |
+| A non-extractable ECDSA key per browser, not per account | Device fingerprinting, MAC or IP | Browsers cannot read a MAC address and IPs are shared on campus Wi-Fi. A key that cannot leave the browser proves the request came from the registered phone. One key per browser is what makes a phone belong to one student. |
+| Soft flags recorded in Postgres | Rejecting on IP or time | Each signal has innocent causes. `record_qr_mark` computes them where the data is, and teachers decide. |
+| Rules as runtime-agnostic modules behind a store interface | Logic inside the Deno handlers | Every scan check is unit tested in Node by `npm run check`; the Deno entry points only wire them to Supabase. |
+| A small keyed cache instead of the old outbox | TanStack Query; keeping the outbox | Nothing a student does is queued: a queued scan would arrive expired. Reads are cached per user for offline reading and refetched on focus; writes go straight to the server and invalidate what they touched. |
+| Hand-drawn SVG charts | A chart library | Two small charts would not justify a dependency heavier than the rest of the screen. |
 
-## Interface
+## Data model
 
-The reference is an instrument panel: hairline outlines, tiny all-caps labels,
-large mono numerals, and one accent doing all the signalling. Presently applies
-that to a black canvas with a single green accent.
+The schema is built in five migrations, one per phase (see
+`supabase/migrations`). In brief:
 
-Two rules keep it consistent. Every value on screen is a label/readout pair, so
-the pattern is a component rather than a habit. And colour never carries meaning
-alone — the selected state in any control is also the only filled one, so the
-app still reads in greyscale and to a screen reader.
+- `profiles` carry a role set by triggers from `teacher_allowlist`; clients can
+  update only their name and roll number.
+- `courses` (with a six-character join code from an alphabet without look-alike
+  characters), `enrolments`, `class_sessions` (one open per course),
+  `attendance` (present or excused only), `attendance_changes` (every manual
+  correction, with what it replaced).
+- `session_secrets` holds each session's 32-byte secret. Students have no policy
+  on it at all.
+- `devices` holds each phone's public key (unique: one key, one account), with
+  at most one active and one pending per student; `device_events` logs every
+  step.
+- `scan_attempts` logs every scan, accepted or not, with address and browser;
+  those two are cleared after 90 days.
+- `settings` holds the allowed email domains, the campus address ranges and the
+  shared-connection threshold, edited by the admin in SQL.
 
-The shell pins itself to the viewport with exactly one scroll region inside it.
-The page itself never scrolls, which removes the rubber-band bounce that gives a
-PWA away. Today is sized to fit a normal timetable without scrolling at all.
+A student's figures in a course: **held** is closed sessions they were enrolled
+for (started after they joined, or marked anyway) minus excused ones;
+**attended** is their present marks in those. Cancelled and open sessions count
+for no one.
 
-## Widths and pointers
+## A scan, end to end
 
-Three tiers, with the phone as the baseline: under 768px it is a bottom dock and
-a single column; from 768px that same navigation becomes a sidebar rail and
-subjects become a card grid; from 1024px Today and each subject split into a
-working column beside a sticky summary rail.
+1. The teacher's projector derives a token for the current 10-second window
+   from the session secret and the server-corrected clock.
+2. The student's Scan screen decodes it in qr-scanner's worker (which works on
+   iOS Safari), signs `"<token>|<user_id>"` with the phone's private key, and
+   calls `mark-attendance`.
+3. The function takes the user from the access token and runs the nine checks
+   of section 5.4 in order, stopping at the first failure: session exists, is
+   open, token valid for this window or the last, student enrolled, device theirs
+   and active, past cooling-off and registered before the class began, signature
+   valid, phone not used for anyone else, student not already marked.
+4. `record_qr_mark` writes the mark with any soft flags; the table's unique
+   constraints settle two scans racing each other.
+5. The attempt is logged. Realtime delivers the new row to the teacher's
+   projector, whose count moves.
 
-The navigation is one element that restyles, not a phone copy plus a desktop
-copy. Two sets of links would mean two identical menus in the accessibility
-tree, and a test asserts there is only ever one.
+## Client architecture
 
-Two decisions are keyed to the pointer rather than the width, because that is
-what they are really about:
+React Router owns the routes behind a shared shell mounted once as a layout
+route. The route set depends on the role, so nothing is matched until the
+profile is known; matching early sent a teacher reloading a session page to the
+catch-all. The projector sits outside the shell so it can fill the screen.
 
-- Suppressing text selection and tap highlights is what stops a phone feeling
-  like a web page, and is exactly wrong on a desktop where selecting and copying
-  is expected. It applies to coarse pointers only.
-- The modal is a draggable drawer on touch and a centred dialog with a mouse.
-  That is a difference in behaviour rather than appearance, so it is a branch in
-  the markup rather than a media query in CSS. Both sit on Radix Dialog, so
-  focus trapping and Escape behave identically either way.
+The session provider caches the profile so an installed app opened offline still
+knows whose it is. Data hooks read through `lib/remote.ts`, keyed by user id and
+cleared on sign-out. The phone's key lives in IndexedDB as a non-extractable
+`CryptoKey`, with persistent storage requested.
 
-Content stops widening before the viewport does. A data row stretched across a
-1600px display is unreadable, so the reading column caps and centres.
-
-## Architecture
-
-React Router owns the routes behind a shared authenticated shell, mounted once
-as a layout route so the chrome survives navigation. Today ships in the entry
-chunk because it is the reason the app gets opened; every other screen is
-loaded on first visit, which keeps the drawer and calendar libraries off the
-launch path. Access control has three distinct states — loading, unauthenticated, setup-incomplete — and never collapses them, because collapsing "loading" into "unauthenticated" is what previously pushed returning users back through onboarding.
-
-The store holds one `AppData` value, persists it per account, and mirrors it into refs so background work reads committed state rather than a stale closure. Writes are optimistic; failures mark the entity dirty in an outbox and surface a toast. The outbox stores references rather than payloads, so replays always send current values.
-
-Timetable expansion is shared between the check-in and the calendar, and folds in records whose sessions no longer match the schedule — otherwise changing a timetable mid-term would hide already-marked classes from the only screen that can correct them.
-
-## Write durability
-
-The store keeps its authoritative values in refs and mirrors them into React,
-not the other way round. Async work reads them the instant a mutation happens,
-long before a render commits — deriving them from an effect meant that signing
-in and loading in the same tick observed a null user and an empty queue, so
-pending work was skipped and the fetch that followed erased it.
-
-Three rules follow from that, and together they are what makes a mark survive
-the app being closed a moment later:
-
-1. A mutation writes the value, the queue entry and both storage keys
-   synchronously. Effects can be beaten by a frozen or killed process.
-2. The queue entry is created before the request is sent and cleared only on a
-   confirmed response, so an aborted request is indistinguishable from a failed
-   one and both are retried.
-3. A load flushes the queue first, then lays anything still queued back over
-   the server's answer. Remote data can never overwrite an unsent local change.
-
-Access tokens expire while an installed app sits closed, so the session is
-refreshed before any query on launch and on resume, and a write rejected for an
-aged-out token is refreshed and retried once. That failure is routine and is
-handled rather than reported.
-
-## Data integrity
-
-Row Level Security scopes every table to its owner. A trigger additionally rejects attendance filed against a subject belonging to someone else, and rejects dates in the future. Constraints cover blank names, colour format, target range, session counts, and length limits, so the client is not the only thing standing between a typo and the database.
+The interface is Presently's: a black canvas, one green accent, mono numerals,
+a bottom dock on phones and a side rail on wide screens, sheets that are drawers
+on touch and dialogs with a pointer, colour never carrying meaning alone.
 
 ## Testing
 
-Attendance formulas are verified against the worked examples and by exhaustive sweeps asserting each answer is correct *and* minimal. Date handling is tested across timezone offsets, DST, leap years and month boundaries. CSV output is checked for quote escaping, newline flattening and spreadsheet formula injection. Render tests drive real flows — onboarding, marking a class, replacing a status, validation failures, persistence across a reload, corrupted cache recovery, and dialog focus behaviour.
+- `npm run check`: the attendance maths, the token module (valid, previous
+  window, expired, future, tampered, wrong session), device signatures, every
+  scan check and registration rule, the projector's clock correction (including
+  a laptop two minutes off), phone status, analysis, CSV output, and render
+  tests driving the real session and data code against a fake Supabase client.
+- `npm run test:db`: the migrations on a throwaway Postgres, with SQL tests for
+  role assignment, RLS isolation between students and between teachers, every
+  function's permission checks, the figures in excused, cancelled, open and
+  late-joined cases, approvals, flags and the export.
+- Acceptance tests on real phones: section 10 of the requirements.
 
-## Formula note
+## Known limits
 
-The original specification's first worked example has an arithmetic slip: with 12 present out of 17 counted classes at a 75% target, the required run is `ceil((0.75 × 17 − 12) / 0.25) = 3`, not 1. The implementation follows the stated formula, which the verifiable `15 / 20 = 75%` result confirms.
+- An absent student's own phone, carried in and unlocked by a friend, is not
+  prevented; the live count against a head count is the check. Phase 4 adds a
+  passkey with user verification to each scan.
+- Safari may clear an uninstalled site's storage after seven days, taking the
+  phone's key with it. Installing the app avoids this; otherwise the student
+  requests a device change.
