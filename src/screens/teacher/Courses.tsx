@@ -6,7 +6,6 @@ import { Booting } from '../../components/Booting'
 import { CourseForm } from '../../components/CourseForm'
 import { Empty } from '../../components/Empty'
 import { LoadError } from '../../components/LoadError'
-import { DataRow } from '../../components/Panel'
 import { ScreenHead } from '../../components/Shell'
 import { Sheet } from '../../components/Sheet'
 import { courseLabel } from '../../lib/api'
@@ -38,19 +37,15 @@ export function TeacherCourses() {
         label={`${data.length - archivedCount} active`}
         title="Courses"
         action={
-          <button
-            type="button"
-            onClick={() => setCreating(true)}
-            aria-label="Create a course"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-bg active:opacity-80"
-          >
-            <Plus size={18} strokeWidth={2.4} />
+          <button type="button" onClick={() => setCreating(true)} aria-label="Create a course" className="btn-primary">
+            <Plus size={20} strokeWidth={2.4} />
+            <span>New course</span>
           </button>
         }
       />
 
       {archivedCount > 0 ? (
-        <div role="tablist" aria-label="Course filter" className="mb-5 flex gap-2">
+        <div role="tablist" aria-label="Course filter" className="inset mb-5 inline-flex gap-1 rounded-full p-1.5">
           {(
             [
               [false, 'Active'],
@@ -64,8 +59,8 @@ export function TeacherCourses() {
               aria-selected={showArchived === key}
               onClick={() => setShowArchived(key)}
               className={cn(
-                'rounded-full border px-4 py-2 font-mono text-[0.65rem] tracking-[0.1em] uppercase transition-colors',
-                showArchived === key ? 'border-accent bg-accent text-bg' : 'border-line text-ink-muted'
+                'min-h-11 rounded-full px-5 text-[1rem] font-semibold transition-colors',
+                showArchived === key ? 'bg-surface text-ink shadow-(--shadow-card)' : 'text-ink-muted hover:text-ink'
               )}
             >
               {label}
@@ -76,7 +71,7 @@ export function TeacherCourses() {
 
       {visible.length === 0 ? (
         <Empty
-          icon={showArchived ? <Archive size={18} strokeWidth={1.8} /> : <Layers size={18} strokeWidth={1.8} />}
+          icon={showArchived ? <Archive size={26} strokeWidth={1.8} /> : <Layers size={26} strokeWidth={1.8} />}
           title={showArchived ? 'Nothing archived' : 'No courses yet'}
           text={
             showArchived
@@ -92,7 +87,7 @@ export function TeacherCourses() {
           }
         />
       ) : (
-        <div className="divide-y divide-line md:grid md:grid-cols-2 md:gap-3 md:divide-y-0 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:gap-4 xl:grid-cols-3">
           {visible.map((entry) => (
             <CourseCard key={entry.course.id} entry={entry} />
           ))}
@@ -123,41 +118,35 @@ function CourseCard({ entry }: { entry: TeacherCourse }) {
   const { course, overview } = entry
 
   return (
-    <Link to={`/courses/${course.id}`} className="block h-full">
-      <DataRow
-        bare
-        className={cn(
-          'items-start py-4',
-          'md:h-full md:rounded-panel md:border md:border-line md:px-4',
-          'md:transition-colors md:hover:border-line-strong'
-        )}
-      >
+    <Link
+      to={`/courses/${course.id}`}
+      className="panel flex h-full flex-col p-2 transition-shadow hover:shadow-(--shadow-lift)"
+    >
+      <div className="flex items-start gap-3 px-3 pt-3 pb-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate font-mono text-[0.62rem] tracking-[0.08em] text-ink-faint uppercase">
-              {courseLabel(course)}
-              {course.term ? ` · ${course.term}` : ''}
-            </p>
-            {overview.openSessionId ? (
-              <span className="label flex shrink-0 items-center gap-1 text-accent">
-                <Radio size={11} strokeWidth={2.2} /> Live
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1.5 truncate text-[0.95rem] text-ink">{course.name}</p>
-
-          <dl className="mt-3 grid grid-cols-4 gap-2">
-            <Figure label="Students" value={String(overview.students)} />
-            <Figure label="Held" value={String(overview.sessionsHeld)} />
-            <Figure
-              label="Avg"
-              value={overview.averagePercentage === null ? '––' : `${Math.round(overview.averagePercentage)}%`}
-            />
-            <Figure label="At risk" value={String(overview.atRisk)} danger={overview.atRisk > 0} />
-          </dl>
+          <p className="title truncate text-[1.25rem]">{course.name}</p>
+          <p className="mt-1 truncate text-[0.95rem] text-ink-muted">
+            {courseLabel(course)}
+            {course.term ? ` · ${course.term}` : ''}
+          </p>
+          {overview.openSessionId ? (
+            <span className="chip mt-2.5 bg-accent-wash text-accent">
+              <Radio size={15} strokeWidth={2.2} className="motion-safe:animate-pulse" /> Live
+            </span>
+          ) : null}
         </div>
-        <ChevronRight size={15} className="mt-1 shrink-0 text-ink-faint" />
-      </DataRow>
+        <ChevronRight size={20} className="mt-1 shrink-0 text-ink-faint" />
+      </div>
+
+      <dl className="inset mt-auto grid grid-cols-4 gap-2 px-3.5 py-3.5">
+        <Figure label="Students" value={String(overview.students)} />
+        <Figure label="Held" value={String(overview.sessionsHeld)} />
+        <Figure
+          label="Avg"
+          value={overview.averagePercentage === null ? '––' : `${Math.round(overview.averagePercentage)}%`}
+        />
+        <Figure label="At risk" value={String(overview.atRisk)} danger={overview.atRisk > 0} />
+      </dl>
     </Link>
   )
 }
@@ -166,7 +155,7 @@ function Figure({ label, value, danger = false }: { label: string; value: string
   return (
     <div className="min-w-0">
       <dt className="label truncate">{label}</dt>
-      <dd className={cn('readout mt-1.5 text-[0.95rem]', danger && 'text-danger')}>{value}</dd>
+      <dd className={cn('readout mt-2 text-[1.375rem]', danger && 'text-danger')}>{value}</dd>
     </div>
   )
 }
