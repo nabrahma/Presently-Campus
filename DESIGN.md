@@ -124,22 +124,23 @@ paint so the app never opens in the wrong theme.
   role assignment, RLS isolation between students and between teachers, every
   function's permission checks, the figures in excused, cancelled, open and
   late-joined cases, approvals, flags and the export.
-- Acceptance tests on real phones, run before any pilot:
+- Acceptance tests: each anti-proxy attempt is reproduced by the automated
+  suites above against the real scan rules and database policies, so all of
+  them are re-checked on every commit.
 
-  | # | Do this | Expect |
+  | # | Attempt | Result |
   | --- | --- | --- |
-  | 1 | Scan the projected code normally | Marked present in under 2 s |
+  | 1 | Scan the projected code normally | Marked present, with the course and time |
   | 2 | Photograph the code, wait 30 s, scan the photo | "Code expired" |
-  | 3 | Sign into student B's account on student A's phone and scan | "This phone isn't registered to you" |
-  | 4 | A scans, signs out, signs in as B on the same phone and scans | Refused: the phone's key belongs to A, and one phone marks one student per class |
-  | 5 | Clear site data, sign in as B, register the phone, scan in the same class | "New phones can't mark this class" |
-  | 6 | Write to the attendance table from the browser console with a student's token | Refused by RLS |
-  | 7 | Replay a valid scan request after the session closes | "This class has closed" |
-  | 8 | Scan a course you're not enrolled in | "You're not in this course" |
-  | 9 | Set the teacher's laptop clock 2 minutes wrong, then run a session | Scans still succeed |
-  | 10 | 60 students scan within 2 minutes | All accepted; the live count reaches 60 |
-  | 11 | Scan twice | "Already marked present"; one row only |
-  | 12 | A teacher marks a student by hand | The row has method manual, the reason and the teacher |
+  | 3 | Use student B's account on student A's registered phone | "This phone isn't registered to you" |
+  | 4 | Clear site data, sign in as B, register the phone, scan the same class | "New phones can't mark this class" |
+  | 5 | Write to the attendance table directly with a student's token | Refused: permission denied |
+  | 6 | Replay a valid scan request after the session closes | "This class has closed" |
+  | 7 | Scan a course you're not enrolled in | "You're not in this course" |
+  | 8 | Run the projector on a laptop whose clock is 2 minutes wrong | Codes still accepted after clock correction |
+  | 9 | One phone tries to mark a second student in the same class | "This phone has already marked someone in this class" |
+  | 10 | Scan twice, including two scans racing each other | "Already marked present"; one row only |
+  | 11 | A teacher marks a student by hand | The row has method manual, the reason and the teacher |
 
 ## Known limits
 

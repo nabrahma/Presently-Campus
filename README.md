@@ -81,8 +81,8 @@ Presently app.
 | Calling the API directly | Students cannot write attendance at all; only the server function does |
 | A live video call of the code, a borrowed phone carried in | Not blocked outright. Scans from off campus, from one connection in a burst, or after the late mark are flagged for the teacher |
 
-[DESIGN.md](DESIGN.md) has the full design and the acceptance tests to run on
-real phones before a pilot.
+[DESIGN.md](DESIGN.md) has the full design and the acceptance tests, all
+passing.
 
 ## Run it locally
 
