@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>You are invited</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f1f1ee">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f1ee">
+      <tr>
+        <td align="center" style="padding:32px 16px">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e5e5e1;border-radius:20px">
+            <tr>
+              <td style="padding:32px;font-family:Arial,Helvetica,sans-serif;color:#17171a">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="width:40px;height:40px;background:#17171a;border-radius:10px;text-align:center;font-size:22px;font-weight:bold;color:#ffffff">P<span style="color:#f0601f">.</span></td>
+                    <td style="padding-left:12px;font-size:16px;font-weight:bold">Presently Campus</td>
+                  </tr>
+                </table>
+                <h1 style="margin:28px 0 12px;font-size:26px;line-height:1.25">You are invited</h1>
+                <p style="margin:0 0 12px;font-size:17px;line-height:1.5">
+                  You have been added to Presently Campus, the class attendance app, as <strong>{{ .Email }}</strong>.
+                </p>
+                <p style="margin:0 0 24px;font-size:17px;line-height:1.5">
+                  Tap the button to accept and sign in. The app asks for a few details the first time, and then it is ready to use.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="background:#17171a;border-radius:999px">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:16px 32px;font-size:17px;font-weight:bold;color:#ffffff;text-decoration:none">Accept and sign in</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:#4c4c53">
+                  The button works once and expires after an hour. If it does not work, copy this link into your browser:<br />
+                  <a href="{{ .ConfirmationURL }}" style="color:#c2410c;word-break:break-all">{{ .ConfirmationURL }}</a>
+                </p>
+                <p style="margin:20px 0 0;font-size:14px;line-height:1.5;color:#4c4c53">
+                  After that, sign in any time at <a href="{{ .SiteURL }}" style="color:#c2410c">{{ .SiteURL }}</a> with a sign-in link sent to this address.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
