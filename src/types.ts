@@ -85,3 +85,5 @@ export const MAX_TERM_LENGTH = 32
 export const MAX_NAME_LENGTH = 120
 export const MAX_ROLL_LENGTH = 32
 export const MAX_REASON_LENGTH = 200
+/** Matches minimum_password_length in supabase/config.toml. */
+export const MIN_PASSWORD_LENGTH = 6

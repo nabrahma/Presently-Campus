@@ -220,6 +220,9 @@ export function describeError(error: unknown): string {
   if (/password should be at least/i.test(message)) {
     return 'Passwords need at least 6 characters.'
   }
+  if (/different from the old password/i.test(message)) {
+    return 'That is already your password.'
+  }
   if (/issued at future|not yet valid/i.test(message)) {
     return 'The server is catching up with your sign-in. Try again in a moment.'
   }
