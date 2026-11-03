@@ -30,7 +30,7 @@ let fixtures: Fixtures = DEFAULTS
 let authListener: ((event: string, session: unknown) => void) | null = null
 
 /** Every write and call the app made, in order, for assertions. */
-export const calls: Array<{ kind: 'insert' | 'update' | 'rpc' | 'function'; name: string; args: unknown }> = []
+export const calls: Array<{ kind: 'insert' | 'update' | 'rpc' | 'function' | 'auth'; name: string; args: unknown }> = []
 
 export function setFixtures(next: Partial<Fixtures>) {
   fixtures = { ...DEFAULTS, ...next }
@@ -185,6 +185,10 @@ export const fakeSupabase = {
     },
     signInWithOtp: async () => ({ data: {}, error: null }),
     signInWithPassword: async () => ({ data: {}, error: null }),
-    signUp: async () => ({ data: {}, error: null })
+    signUp: async () => ({ data: {}, error: null }),
+    async updateUser(attributes: Record<string, unknown>) {
+      calls.push({ kind: 'auth', name: 'updateUser', args: attributes })
+      return { data: { user: fixtures.user }, error: null }
+    }
   }
 }

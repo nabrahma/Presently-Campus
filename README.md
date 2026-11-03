@@ -140,6 +140,11 @@ your own; never reuse the live Presently ones.
    A teacher already signed up as a student is promoted the moment their email
    is added.
 
+   To spare a new teacher any sign-in emails, create their account in the
+   dashboard under Authentication → Users → Add user, with a starting password
+   and Auto confirm ticked. They sign in with email and password and change it
+   in Settings. Anyone who signed in with a link can add a password there too.
+
    The people building the app go on a separate dev list instead. A dev is not
    a teacher: they get a Teacher / Student switch in the top bar and in
    Settings, and the server treats them exactly as whichever they are viewing

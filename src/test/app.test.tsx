@@ -152,6 +152,43 @@ describe('joining a course', () => {
   })
 })
 
+describe('setting a password', () => {
+  it('adds a password to an account made through a sign-in link', async () => {
+    setFixtures({ user: TEACHER, tables: { profiles: [teacherProfile()] } })
+    const user = userEvent.setup()
+    mount('/settings')
+
+    const save = await screen.findByRole('button', { name: /save password/i })
+    expect((save as HTMLButtonElement).disabled).toBe(true)
+
+    await user.type(screen.getByLabelText(/new password/i), 'chalk-and-board')
+    await user.type(screen.getByLabelText(/type it again/i), 'chalk-and-bored')
+    expect(screen.getByText(/do not match/i)).toBeTruthy()
+    expect((save as HTMLButtonElement).disabled).toBe(true)
+
+    await user.clear(screen.getByLabelText(/type it again/i))
+    await user.type(screen.getByLabelText(/type it again/i), 'chalk-and-board')
+    await user.click(save)
+
+    expect(await screen.findByText(/password saved/i)).toBeTruthy()
+    expect(calls).toContainEqual({ kind: 'auth', name: 'updateUser', args: { password: 'chalk-and-board' } })
+    expect((screen.getByLabelText(/new password/i) as HTMLInputElement).value).toBe('')
+  })
+
+  it('refuses a password shorter than six characters', async () => {
+    setFixtures(studentWorld())
+    const user = userEvent.setup()
+    mount('/settings')
+
+    await user.type(await screen.findByLabelText(/new password/i), 'abc')
+    await user.type(screen.getByLabelText(/type it again/i), 'abc')
+
+    expect(screen.getByText(/at least 6 characters\./i)).toBeTruthy()
+    expect((screen.getByRole('button', { name: /save password/i }) as HTMLButtonElement).disabled).toBe(true)
+    expect(calls.some((call) => call.kind === 'auth')).toBe(false)
+  })
+})
+
 describe('signing out', () => {
   it('forgets the account on this device', async () => {
     setFixtures(studentWorld())

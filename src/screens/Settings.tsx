@@ -8,12 +8,13 @@ import { PrivacyNotice } from '../components/PrivacyNotice'
 import { DevSwitch } from '../components/DevSwitch'
 import { PhonePanel } from '../components/PhonePanel'
 import { ScreenHead } from '../components/Shell'
+import { setPassword } from '../lib/api'
 import { useAppearance, type TextSize, type ThemeChoice } from '../lib/appearance'
 import { usePhoneStatus } from '../lib/devices'
 import { cn } from '../lib/cn'
 import { useSession } from '../lib/session'
 import { useInstallPrompt } from '../lib/useInstallPrompt'
-import { MAX_NAME_LENGTH, MAX_ROLL_LENGTH } from '../types'
+import { MAX_NAME_LENGTH, MAX_ROLL_LENGTH, MIN_PASSWORD_LENGTH } from '../types'
 
 export function Settings({ children }: { children?: ReactNode }) {
   const navigate = useNavigate()
@@ -106,6 +107,8 @@ export function Settings({ children }: { children?: ReactNode }) {
             </div>
           </Panel>
 
+          <PasswordPanel email={email} />
+
           {children}
 
           {profile?.isDev ? <DeveloperPanel /> : null}
@@ -168,6 +171,109 @@ export function Settings({ children }: { children?: ReactNode }) {
         }}
       />
     </>
+  )
+}
+
+/**
+ * Adds a password to this account, or replaces it. Accounts made through a
+ * sign-in link have none, so this is what lets a teacher sign in with email
+ * and password instead of waiting for an email each time.
+ */
+function PasswordPanel({ email }: { email: string | null }) {
+  const [next, setNext] = useState('')
+  const [again, setAgain] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  const short = next.length > 0 && next.length < MIN_PASSWORD_LENGTH
+  const mismatch = again.length > 0 && again !== next
+  const ready = next.length >= MIN_PASSWORD_LENGTH && again === next
+
+  const edit = (update: () => void) => {
+    update()
+    setError('')
+    setSaved(false)
+  }
+
+  const save = async () => {
+    if (!ready || saving) return
+    setSaving(true)
+    setError('')
+    try {
+      await setPassword(next)
+      setNext('')
+      setAgain('')
+      setSaved(true)
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Could not save the password.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Panel className="p-5 md:p-6">
+      <h2 className="title text-[1.25rem]">Password</h2>
+      <p className="mt-1 text-[1rem] leading-relaxed text-ink-muted">
+        Sign in with your email and a password instead of waiting for an email link. This is the same account;
+        nothing in it changes.
+      </p>
+
+      <form
+        className="mt-5 space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void save()
+        }}
+      >
+        {/* Lets password managers file the new password under the right account. */}
+        <input type="email" name="username" autoComplete="username" value={email ?? ''} readOnly hidden />
+        <div>
+          <label className="mb-2 block text-[1rem] font-medium" htmlFor="settings-password">
+            New password
+          </label>
+          <input
+            id="settings-password"
+            className="field"
+            type="password"
+            autoComplete="new-password"
+            minLength={MIN_PASSWORD_LENGTH}
+            placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+            value={next}
+            onChange={(event) => edit(() => setNext(event.target.value))}
+          />
+        </div>
+        <div>
+          <label className="mb-2 block text-[1rem] font-medium" htmlFor="settings-password-again">
+            Type it again
+          </label>
+          <input
+            id="settings-password-again"
+            className="field"
+            type="password"
+            autoComplete="new-password"
+            value={again}
+            onChange={(event) => edit(() => setAgain(event.target.value))}
+          />
+        </div>
+
+        {short || mismatch || error ? (
+          <p role="alert" className="text-[1rem] text-danger">
+            {error || (short ? `Passwords need at least ${MIN_PASSWORD_LENGTH} characters.` : 'The two passwords do not match.')}
+          </p>
+        ) : null}
+        {saved ? (
+          <p role="status" className="text-[1rem] text-good">
+            Password saved. Next time, sign in with {email ?? 'your email'} and this password.
+          </p>
+        ) : null}
+
+        <button type="submit" className={cn('w-full', ready ? 'btn-primary' : 'btn-secondary')} disabled={!ready || saving}>
+          {saving ? 'Saving…' : 'Save password'}
+        </button>
+      </form>
+    </Panel>
   )
 }
 

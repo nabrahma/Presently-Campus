@@ -134,3 +134,12 @@ export async function updateProfile(
   const row = await run((db) => db.from('profiles').update(payload).eq('id', userId).select('*').single())
   return toProfile(row as Row)
 }
+
+/**
+ * Sets or replaces the signed-in account's password. An account made through a
+ * sign-in link has none, so this is how it gains password sign-in; the same
+ * account, its email and its data stay as they are.
+ */
+export async function setPassword(password: string): Promise<void> {
+  await run<unknown>((db) => db.auth.updateUser({ password }))
+}

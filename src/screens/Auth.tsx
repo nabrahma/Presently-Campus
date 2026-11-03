@@ -7,6 +7,7 @@ import { Logo } from '../components/Logo'
 import { cn } from '../lib/cn'
 import { useSession } from '../lib/session'
 import { describeError, linkError, supabase } from '../lib/supabaseClient'
+import { MIN_PASSWORD_LENGTH } from '../types'
 
 type Mode = 'signIn' | 'signUp'
 type Method = 'link' | 'password'
@@ -53,8 +54,8 @@ export function Auth() {
       setError('This build has no Supabase credentials, so accounts are unavailable.')
       return
     }
-    if (method === 'password' && password.length < 6) {
-      setError('Passwords need at least 6 characters.')
+    if (method === 'password' && password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Passwords need at least ${MIN_PASSWORD_LENGTH} characters.`)
       return
     }
 
@@ -213,16 +214,21 @@ export function Auth() {
                   id="auth-password"
                   className="field"
                   type="password"
-                  minLength={6}
+                  minLength={MIN_PASSWORD_LENGTH}
                   autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
                   required
                   value={password}
-                  placeholder="At least 6 characters"
+                  placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
                   onChange={(event) => {
                     setPassword(event.target.value)
                     if (error) setError('')
                   }}
                 />
+                {mode === 'signIn' ? (
+                  <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-muted">
+                    No password yet? Sign in with an email link once, then set one in Settings.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
