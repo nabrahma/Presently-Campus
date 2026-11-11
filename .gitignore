@@ -34,5 +34,5 @@ Presently-Project-Brief.pdf
 # Submission files: kept locally, not published
 handover/
 
-# Report: only the PDF in report/ is published, never the Word source
+# Report: only the PDF in PROJECT-REPORT/ is published, never the Word source
 *.docx

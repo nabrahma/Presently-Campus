@@ -2,6 +2,9 @@
 
 Class attendance by QR scan, for teachers and students.
 
+> **PROJECT REPORT:** [**PROJECT-REPORT/Presently-Campus-Project-Report.pdf**](PROJECT-REPORT/Presently-Campus-Project-Report.pdf)
+> (IoTBDM, Semester VII: Abhishek Kokadwar, 2023IMG-002 · Nabaskar Brahma, 2023IMG-035)
+
 ![The teacher's dashboard: figures across every course, attendance against each target, and what needs attention now](docs/screenshots/teacher-dashboard.png)
 
 A teacher starts a session and projects a QR code that changes every ten
@@ -181,7 +184,7 @@ supabase/
 ## Project report
 
 The project report submitted for the course is in
-[report/Presently-Campus-Project-Report.pdf](report/Presently-Campus-Project-Report.pdf).
+[PROJECT-REPORT/Presently-Campus-Project-Report.pdf](PROJECT-REPORT/Presently-Campus-Project-Report.pdf).
 It covers the requirements, the system and anti-proxy design, the database,
 the implementation, testing and the project's limitations.
 
