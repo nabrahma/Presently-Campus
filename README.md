@@ -178,12 +178,22 @@ supabase/
 
 [DESIGN.md](DESIGN.md) explains the technical decisions.
 
+## Project report
+
+The project report submitted for the course is in
+[report/Presently-Campus-Project-Report.pdf](report/Presently-Campus-Project-Report.pdf).
+It covers the requirements, the system and anti-proxy design, the database,
+the implementation, testing and the project's limitations.
+
 ## Team
 
-Built by nabrahma and Abhishek Kokadwar for the IoTBDM project. nabrahma owns
-the schema, the server functions and the student app; Abhishek Kokadwar owns
-the teacher app, the flags and analysis, and the acceptance tests on real
-phones.
+Built for the IoTBDM project (Semester VII) at ABV-Indian Institute of
+Information Technology and Management Gwalior by:
+
+| Name | Roll number | Owns |
+| --- | --- | --- |
+| Nabaskar Brahma | 2023IMG-035 | The schema, the server functions and the student app |
+| Abhishek Kokadwar | 2023IMG-002 | The teacher app, the flags and analysis, and the acceptance tests on real phones |
 
 ## License
 
