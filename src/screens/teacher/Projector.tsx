@@ -153,7 +153,7 @@ export function Projector() {
                 .slice(0, 3)
                 .map((row) => (
                   <li key={row.studentId} className="flex gap-3 text-[1rem] text-ink-muted">
-                    <span className="w-[6.5rem] shrink-0 font-mono tabular-nums">{row.rollNumber}</span>
+                    <span className="w-[6.5rem] shrink-0 tabular-nums ">{row.rollNumber}</span>
                     <span className="truncate">{row.flags.map(flagLabel).join(' · ')}</span>
                   </li>
                 ))}
@@ -245,7 +245,7 @@ function Countdown({ remaining }: { remaining: number }) {
           strokeDashoffset={circumference * (1 - fraction)}
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center font-mono text-[1.5rem] font-medium text-ink tabular-nums">
+      <span className="absolute inset-0 grid place-items-center tabular-nums text-[1.5rem] font-medium text-ink">
         {Math.ceil(remaining)}
       </span>
     </div>

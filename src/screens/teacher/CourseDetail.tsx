@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Archive, ArchiveRestore, BookOpen, CalendarCheck, ChevronRight, Download, FileSpreadsheet, Gauge, LineChart, Pencil, Play, QrCode as QrIcon, Radio, Rows3, TriangleAlert, Users } from 'lucide-react'
+import { Avatar } from '../../components/Avatar'
 import { BackLink } from '../../components/BackLink'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -163,6 +164,7 @@ export function TeacherCourseDetail() {
             </div>
           ) : (
             <div role="list">
+              <RosterHeadings />
               {active.map((student) => (
                 <RosterLine key={student.row.studentId} student={student} target={target} onOpen={() => setSelected(student)} />
               ))}
@@ -174,7 +176,7 @@ export function TeacherCourseDetail() {
               <SectionHead label={`Removed · ${removed.length}`} />
               {removed.map((student) => (
                 <div key={student.row.studentId} className="flex min-h-16 items-center gap-3 border-b border-line py-3 last:border-b-0">
-                  <span className="w-[6.5rem] shrink-0 font-mono text-[0.95rem] text-ink-muted">{student.row.rollNumber}</span>
+                  <span className="w-[6.5rem] shrink-0 tabular-nums text-[0.95rem] text-ink-muted">{student.row.rollNumber}</span>
                   <span className="min-w-0 flex-1 truncate text-[1.0625rem] text-ink-muted">{student.row.fullName}</span>
                   <button
                     type="button"
@@ -323,40 +325,65 @@ function SortControl({ value, onChange }: { value: RosterSort; onChange: (value:
   )
 }
 
-const ZONE_EDGE: Record<ScoredStudent['zone'], string> = {
-  danger: 'bg-danger',
-  caution: 'bg-warn',
-  safe: 'bg-transparent',
-  neutral: 'bg-transparent'
+/* The register's status column: the zone in words, with a matching dot. */
+const ZONE_STATUS: Record<ScoredStudent['zone'], { label: string; pill: string; dot: string }> = {
+  safe: { label: 'On track', pill: 'bg-good-wash text-good', dot: 'bg-good-bright' },
+  caution: { label: 'Close to target', pill: 'bg-warn-wash text-warn', dot: 'bg-warn-bright' },
+  danger: { label: 'Below target', pill: 'bg-danger-wash text-danger', dot: 'bg-danger' },
+  neutral: { label: 'No classes yet', pill: 'bg-elevated text-ink-muted', dot: 'bg-ink-faint' }
+}
+
+/** The register's column headings, over the rows on a wide screen. */
+function RosterHeadings() {
+  return (
+    <div
+      aria-hidden
+      className="mb-1 hidden items-center gap-3 border-b border-line pb-2.5 text-[0.875rem] font-semibold text-ink-faint md:flex"
+    >
+      <span className="min-w-0 flex-1 pl-14">Student</span>
+      <span className="w-[11.5rem] shrink-0">Attended</span>
+      <span className="w-[9.5rem] shrink-0">Status</span>
+      <span className="w-[5.5rem] shrink-0 text-right">Attendance</span>
+    </div>
+  )
 }
 
 function RosterLine({ student, target, onOpen }: { student: ScoredStudent; target: number; onOpen: () => void }) {
   const { row, stats, zone } = student
+  const status = ZONE_STATUS[zone]
+  const attended = stats.total === 0 ? 'Nothing counted yet' : `${stats.present} of ${stats.total}`
 
   return (
     <button
       type="button"
       role="listitem"
       onClick={onOpen}
-      className={cn(
-        'hover-row -mx-2 flex min-h-16 w-[calc(100%+1rem)] items-center gap-3 rounded-xl border-b border-line px-2 py-3 text-left last:border-b-0 active:opacity-70',
-        zone === 'danger' && 'bg-danger-wash/70'
-      )}
+      className="hover-row -mx-2 flex min-h-[4.5rem] w-[calc(100%+1rem)] items-center gap-3 rounded-xl border-b border-line px-2 py-3 text-left last:border-b-0 active:opacity-70"
     >
-      {/* Colour is never the only signal: the margin note says it in words. */}
-      <span aria-hidden className={cn('h-10 w-1 shrink-0 rounded-full', ZONE_EDGE[zone])} />
-      <span className="hidden w-[6.5rem] shrink-0 font-mono text-[0.95rem] text-ink-muted tabular-nums sm:block">
-        {row.rollNumber}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[1.0625rem] font-semibold">{row.fullName}</span>
-        <span className="mt-0.5 block truncate text-[0.95rem] text-ink-muted tabular-nums">
-          <span className="font-mono sm:hidden">{row.rollNumber} · </span>
-          {stats.total === 0 ? 'Nothing counted yet' : `${stats.present} of ${stats.total}`}
-          <MarginNote stats={stats} />
+      <Avatar name={row.fullName} />
+      {/* On a phone the attended column stacks under the name; from md it is
+          a column of its own. Either way it is rendered once. */}
+      <span className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
+        <span className="block min-w-0 md:flex-1">
+          <span className="block truncate text-[1.0625rem] font-semibold">{row.fullName}</span>
+          <span className="mt-0.5 block truncate text-[0.95rem] text-ink-muted tabular-nums">{row.rollNumber}</span>
+        </span>
+        <span className="mt-0.5 block truncate text-[0.95rem] tabular-nums md:mt-0 md:w-[11.5rem] md:shrink-0 md:text-[0.975rem]">
+          <span className="text-ink-muted md:block md:font-semibold md:text-ink">{attended}</span>
+          {stats.total > 0 ? <span className="md:hidden"> · </span> : null}
+          <span className="md:block">
+            <MarginNote stats={stats} separator="" />
+          </span>
         </span>
       </span>
-      <Percent stats={stats} target={target} className="text-[1.375rem]" />
+      {/* Colour is never the only signal: the status says it in words. */}
+      <span className="hidden w-[9.5rem] shrink-0 md:block">
+        <span className={cn('chip', status.pill)}>
+          <span aria-hidden className={cn('size-2 rounded-full', status.dot)} />
+          {status.label}
+        </span>
+      </span>
+      <Percent stats={stats} target={target} className="shrink-0 text-right text-[1.375rem] md:w-[5.5rem]" />
     </button>
   )
 }

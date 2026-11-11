@@ -173,7 +173,7 @@ export function TeacherAnalysis() {
               </thead>
               <tbody>
                 {flags.data.map((outcome) => (
-                  <tr key={outcome.flag} className="border-t border-line font-mono tabular-nums">
+                  <tr key={outcome.flag} className="border-t border-line tabular-nums ">
                     <td className="py-3 pr-3 font-sans font-medium">{flagLabel(outcome.flag)}</td>
                     <td className="py-3 pl-4 text-right">{outcome.kept}</td>
                     <td className="py-3 pl-4 text-right">{outcome.removed}</td>
@@ -200,7 +200,7 @@ function ProjectionRow({ item, left, target }: { item: Projection; left: number;
 
   return (
     <div role="row" className="flex min-h-18 items-center gap-3 border-b border-line py-3.5 last:border-b-0">
-      <span role="cell" className="hidden w-[6.5rem] shrink-0 font-mono text-[0.95rem] text-ink-muted tabular-nums sm:block">
+      <span role="cell" className="hidden w-[6.5rem] shrink-0 tabular-nums text-[0.95rem] text-ink-muted sm:block">
         {item.row.rollNumber}
       </span>
       <span role="cell" className="min-w-0 flex-1">
