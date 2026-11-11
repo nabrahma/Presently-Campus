@@ -18,8 +18,8 @@ const KEY = 'presently-campus:v1:appearance'
 
 const DEFAULT: Appearance = { theme: 'system', text: 'standard' }
 
-/** Page colours, for the browser chrome around the app. Match index.css. */
-const CHROME = { light: '#f1f1ee', dark: '#0e0e10' } as const
+/** The top bar's colour (surface in index.css), so the browser chrome runs into it. */
+const CHROME = { light: '#ffffff', dark: '#141a2d' } as const
 
 function read(): Appearance {
   try {

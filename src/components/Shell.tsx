@@ -1,6 +1,7 @@
-import { Suspense, useEffect, useRef, type ReactNode } from 'react'
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, Outlet, matchPath, useLocation } from 'react-router-dom'
-import { CircleSlash, House, Layers, Moon, Radio, ScanLine, Settings2, ShieldCheck, Sun, type LucideIcon } from 'lucide-react'
+import { CalendarDays, CircleSlash, Clock3, House, Layers, Moon, Radio, ScanLine, Settings2, ShieldCheck, Sun, type LucideIcon } from 'lucide-react'
+import { Avatar } from './Avatar'
 import { Booting } from './Booting'
 import { DevSwitch } from './DevSwitch'
 import { Logo } from './Logo'
@@ -43,17 +44,15 @@ function sectionOf(nav: NavItem[], pathname: string): NavItem | undefined {
 }
 
 /**
- * The persistent frame every screen renders into.
+ * The persistent frame every screen renders into, laid out like the office
+ * software people already know: a top bar with the date and the account, a
+ * menu down the left with a word beside every icon, and the screen on a soft
+ * grey page.
  *
- * Below `md` it is a phone: a header, one column and a tab bar with a word
- * under every icon. From `md` the same links become a labelled sidebar and the
- * screen sits in a white frame on the grey page, as in a desktop app.
- *
- * The navigation is a single element that restyles rather than a phone copy
- * plus a desktop copy, so there is only ever one set of links in the document.
- *
- * Every icon carries its name. Icons alone are guesses for anyone who has not
- * learnt them, and the people using this have better things to learn.
+ * Below `md` it is a phone: the top bar shrinks to the logo and the section,
+ * and the same menu becomes a tab bar with a word under every icon. The menu
+ * is a single element that restyles rather than a phone copy plus a desktop
+ * copy, so there is only ever one set of links in the document.
  */
 export function Shell() {
   const location = useLocation()
@@ -70,72 +69,65 @@ export function Shell() {
   }, [location.pathname])
 
   return (
-    <div className="flex h-full w-full flex-col bg-surface md:flex-row md:bg-bg">
-      <aside
+    <div className="flex h-full w-full flex-col bg-bg">
+      <header
         className={cn(
-          // Phone: a tab bar pinned under the content.
-          'order-last shrink-0 border-t border-line bg-surface px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]',
-          // Desktop: a labelled sidebar on the grey page.
-          'md:order-first md:flex md:w-[16rem] md:flex-col md:border-0 md:bg-transparent md:px-4 md:py-6 lg:w-[17.5rem]'
+          'flex shrink-0 items-center gap-3 border-b border-line bg-surface',
+          'px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 md:h-[4.75rem] md:gap-5 md:px-6 md:py-0'
         )}
       >
-        <NavLink to="/" className="hidden items-center gap-3 px-2 md:flex" aria-label="Presently Campus, go home">
-          <Logo className="size-11" />
-          <span className="min-w-0">
-            <span className="title block text-[1.05rem]">Presently</span>
-            <span className="block text-[0.85rem] text-ink-muted">Campus attendance</span>
+        <NavLink to="/" className="flex min-w-0 items-center gap-3 md:w-[13.75rem] md:shrink-0" aria-label="Presently Campus, go home">
+          <Logo className="size-10 md:size-11" />
+          <span className="hidden min-w-0 md:block">
+            <span className="title block text-[1.075rem]">Presently</span>
+            <span className="block text-[0.85rem] font-medium text-ink-muted">Campus attendance</span>
           </span>
         </NavLink>
 
-        <div aria-hidden className="mx-2 mt-6 mb-4 hidden h-px bg-line-strong/70 md:block" />
+        <p className="title min-w-0 flex-1 truncate text-[1.125rem] md:hidden">{section?.label ?? 'Presently'}</p>
 
-        <nav aria-label="Sections" className="flex md:flex-col md:gap-1.5">
-          {nav.map((item) => (
-            <SectionLink key={item.to} item={item} active={section?.to === item.to} />
-          ))}
-        </nav>
+        <span aria-hidden className="hidden h-10 w-px bg-line md:block" />
+        <Today />
 
-        <div className="mt-auto hidden md:block">
-          <AccountCard name={profile?.fullName ?? ''} role={role} dev={profile?.isDev ?? false} />
+        <div className="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
+          {online ? null : <OfflineFlag />}
+          <DevSwitch compact />
+          <ThemeToggle />
+          <AccountChip name={profile?.fullName ?? ''} role={role} dev={profile?.isDev ?? false} />
         </div>
-      </aside>
+      </header>
 
       {/*
         min-h-0 is load-bearing. A flex item defaults to min-height:auto, so
-        without it this column refuses to shrink below its content, the main
+        without it this row refuses to shrink below its content, the main
         region never becomes the thing that scrolls, and the tab bar is pushed
         off the bottom of the viewport.
       */}
-      <div
-        className={cn(
-          'flex min-h-0 min-w-0 flex-1 flex-col',
-          'md:my-3 md:mr-3 md:overflow-hidden md:rounded-[2rem] md:border md:border-line md:bg-surface md:shadow-(--shadow-card)'
-        )}
-      >
-        <header
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
+        <aside
           className={cn(
-            'flex shrink-0 items-center justify-between gap-3 border-b border-line',
-            'px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 md:px-8 md:py-4'
+            // Phone: a tab bar pinned under the content.
+            'order-last shrink-0 border-t border-line bg-surface px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+            // Desktop: a labelled menu down the left.
+            'md:order-first md:flex md:w-[15.75rem] md:flex-col md:border-t-0 md:border-r md:px-3.5 md:pt-6 md:pb-5'
           )}
         >
-          <div className="flex min-w-0 items-center gap-3">
-            <NavLink to="/" className="md:hidden" aria-label="Presently Campus, go home">
-              <Logo className="size-10" />
-            </NavLink>
-            <Breadcrumb section={section} />
-          </div>
+          <p className="mb-2 hidden px-3 text-[0.85rem] font-semibold text-ink-faint md:block">Menu</p>
+          <nav aria-label="Sections" className="flex md:flex-col md:gap-1">
+            {nav.map((item) => (
+              <SectionLink key={item.to} item={item} active={section?.to === item.to} />
+            ))}
+          </nav>
 
-          <div className="flex shrink-0 items-center gap-2">
-            {online ? null : <OfflineFlag />}
-            <DevSwitch compact />
-            <ThemeToggle />
+          <div className="mt-auto hidden md:block">
+            <ClockTile />
           </div>
-        </header>
+        </aside>
 
-        <main ref={scrollRef} className="scroll-region min-h-0 flex-1 px-4 pt-5 md:px-8 md:pt-8">
+        <main ref={scrollRef} className="scroll-region min-h-0 flex-1 px-4 pt-5 md:px-8 md:pt-6">
           {/* Content stops widening well before the viewport does; a row of
               figures stretched across 1600px is unreadable. */}
-          <div className="mx-auto w-full max-w-[34rem] md:max-w-[46rem] lg:max-w-[76rem]">
+          <div className="mx-auto w-full max-w-[34rem] md:max-w-[52rem] lg:max-w-[80rem]">
             <Suspense fallback={<Booting />}>
               <Outlet />
             </Suspense>
@@ -147,7 +139,7 @@ export function Shell() {
   )
 }
 
-/** A tab under a phone screen; a row in the sidebar on a wider one. */
+/** A tab under a phone screen; a row in the menu on a wider one. */
 function SectionLink({ item, active }: { item: NavItem; active: boolean }) {
   const { to, label, icon: Icon, end } = item
   return (
@@ -156,40 +148,74 @@ function SectionLink({ item, active }: { item: NavItem; active: boolean }) {
       end={end}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex min-h-16 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[0.85rem] font-medium transition-colors',
-        'md:min-h-14 md:flex-none md:flex-row md:justify-start md:gap-3.5 md:px-2.5 md:text-[1.0625rem]',
-        active
-          ? 'text-ink md:bg-surface md:shadow-(--shadow-card)'
-          : 'text-ink-muted md:hover:bg-surface/60 md:hover:text-ink'
+        'relative flex min-h-16 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[0.85rem] font-semibold transition-colors',
+        'md:min-h-13 md:flex-none md:flex-row md:justify-start md:gap-3 md:px-3 md:text-[1.0625rem]',
+        active ? 'text-accent md:bg-accent-wash' : 'text-ink-muted md:hover:bg-elevated md:hover:text-ink'
       )}
     >
+      {/* The bar at the left edge marks the current section on a wide screen. */}
+      {active ? <span aria-hidden className="absolute top-3 bottom-3 -left-3.5 hidden w-1 rounded-r-full bg-accent-solid md:block" /> : null}
       <span
         className={cn(
-          'grid h-8 w-14 shrink-0 place-items-center rounded-full transition-colors md:size-10 md:rounded-xl',
-          active ? 'bg-ink text-surface' : 'text-ink-muted'
+          'grid h-8 w-14 shrink-0 place-items-center rounded-full transition-colors md:size-6 md:rounded-none',
+          active ? 'bg-accent-wash md:bg-transparent' : ''
         )}
       >
-        <Icon size={20} strokeWidth={2} />
+        <Icon size={21} strokeWidth={active ? 2.3 : 2} />
       </span>
       {label}
     </NavLink>
   )
 }
 
-/** "Presently / Courses": where you are, in words. */
-function Breadcrumb({ section }: { section: NavItem | undefined }) {
-  const Icon = section?.icon ?? House
+/** Re-renders on the minute, so the date and clock are never stale. */
+function useMinute(): Date {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    let interval: number | undefined
+    const timeout = window.setTimeout(() => {
+      setNow(new Date())
+      interval = window.setInterval(() => setNow(new Date()), 60_000)
+    }, 60_000 - (Date.now() % 60_000))
+    return () => {
+      window.clearTimeout(timeout)
+      if (interval) window.clearInterval(interval)
+    }
+  }, [])
+  return now
+}
+
+/** Today's date in the top bar, as a register would head its page. */
+function Today() {
+  const now = useMinute()
   return (
-    <p className="flex min-w-0 items-center gap-2 text-[1.0625rem]">
-      <span className="hidden size-8 shrink-0 place-items-center rounded-lg bg-elevated text-ink-muted md:grid">
-        <Icon size={17} strokeWidth={2} />
+    <div className="hidden min-w-0 items-center gap-3 md:flex">
+      <span className="icon-tile size-10">
+        <CalendarDays size={19} strokeWidth={2.1} />
       </span>
-      <span className="hidden text-ink-muted sm:inline">Presently</span>
-      <span aria-hidden className="hidden text-ink-faint sm:inline">
-        /
+      <div className="min-w-0">
+        <p className="text-[0.85rem] font-medium text-ink-muted">Today</p>
+        <p className="truncate text-[1.0625rem] font-bold">
+          {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** The time at the foot of the menu, for a teacher keeping an eye on the hour. */
+function ClockTile() {
+  const now = useMinute()
+  return (
+    <div className="inset flex items-center gap-3 px-3.5 py-3">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-accent shadow-(--shadow-card)">
+        <Clock3 size={19} strokeWidth={2.1} />
       </span>
-      <span className="title truncate">{section?.label ?? 'Presently'}</span>
-    </p>
+      <div>
+        <p className="readout text-[1.25rem]">{now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</p>
+        <p className="mt-1 text-[0.85rem] font-medium text-ink-muted">{now.toLocaleDateString(undefined, { weekday: 'long' })}</p>
+      </div>
+    </div>
   )
 }
 
@@ -203,33 +229,24 @@ function ThemeToggle() {
       onClick={() => setAppearance({ theme: next })}
       aria-label={`Switch to ${next} mode`}
       title={`Switch to ${next} mode`}
-      className="grid size-12 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-elevated"
+      className="grid size-11 place-items-center rounded-xl border border-line text-ink transition-colors hover:bg-elevated"
     >
       {shown === 'dark' ? <Sun size={20} strokeWidth={2} /> : <Moon size={20} strokeWidth={2} />}
     </button>
   )
 }
 
-function AccountCard({ name, role, dev }: { name: string; role: Role; dev: boolean }) {
-  const initials =
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('') || '?'
-
+/** Who is signed in, top right, as in every office app; it opens Settings. */
+function AccountChip({ name, role, dev }: { name: string; role: Role; dev: boolean }) {
   return (
     <NavLink
       to="/settings"
-      className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-3 transition-colors hover:border-line-strong"
+      className="hidden items-center gap-3 rounded-xl border border-line py-1.5 pr-4 pl-1.5 transition-colors hover:bg-elevated md:flex"
     >
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-wash text-[0.95rem] font-semibold text-accent">
-        {initials}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[0.95rem] font-semibold">{name || 'Your account'}</span>
-        <span className="block text-[0.85rem] text-ink-muted">
+      <Avatar name={name || '?'} className="size-9 text-[0.85rem]" />
+      <span className="min-w-0 max-w-[12rem]">
+        <span className="block truncate text-[0.95rem] leading-tight font-semibold">{name || 'Your account'}</span>
+        <span className="block text-[0.825rem] text-ink-muted">
           {dev ? `Dev · ${role} view` : role === 'teacher' ? 'Teacher' : 'Student'}
         </span>
       </span>
@@ -249,7 +266,7 @@ function OfflineFlag() {
 
 /**
  * Screen title block: the title, a line of context under it, and an optional
- * icon tile beside it, as at the top of the reference layout.
+ * icon tile beside it.
  */
 export function ScreenHead({
   label,
@@ -263,18 +280,14 @@ export function ScreenHead({
   action?: ReactNode
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 md:mb-8">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 md:mb-7">
       <div className="flex min-w-0 items-center gap-4">
-        {icon ? (
-          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-accent-bright text-white md:size-16">
-            {icon}
-          </span>
-        ) : null}
+        {icon ? <span className="icon-tile size-14 rounded-2xl md:size-16">{icon}</span> : null}
         <div className="min-w-0">
           {/* Wrapped, not truncated: a cut-off course name or join code
               helps nobody. */}
-          <h1 className="title text-[1.75rem] break-words md:text-[2.125rem]">{title}</h1>
-          <p className="mt-1 text-[1.0625rem] text-ink-muted md:text-[1.125rem]">{label}</p>
+          <h1 className="title text-[1.75rem] break-words md:text-[2rem]">{title}</h1>
+          <p className="mt-1 text-[1.0625rem] text-ink-muted">{label}</p>
         </div>
       </div>
       {action}

@@ -82,32 +82,43 @@ cleared on sign-out. The phone's key lives in IndexedDB as a non-extractable
 
 ## Interface
 
-The people using this include teachers who did not grow up with phone apps, so
-the interface is built to be read without effort and operated without
-learning:
+The people using this range from teachers who did not grow up with phone apps
+to students who grew up with nothing else. The interface borrows the layout of
+the office software the first group already knows, and the finish the second
+group expects, without trading away readability for either:
 
-- **Two themes, chosen not imposed.** A light theme (white cards on a warm grey
-  page, black for the main action, orange for the brand and live states) and a
-  dark theme with its own values. Automatic follows the device. Body text clears
+- **A layout people already know.** A white top bar with today's date and the
+  signed-in person, a menu down the left with a word beside every icon and a
+  bar marking where you are, and screens of white cards on a soft grey page,
+  as in a staff portal or a mail client. The teacher's home is a dashboard:
+  summary figures across every course, each course's attendance against its
+  target, and a column for what needs acting on now (a live session, a course
+  slipping below target).
+- **Two themes, chosen not imposed.** A light theme (white and cool grey, one
+  calm indigo for the brand, the main action and the current place) and a dark
+  theme with its own values. Automatic follows the device. Body text clears
   7:1 contrast and secondary text 4.5:1 in both. All colours are tokens in
   `src/index.css`; nothing else names a colour.
-- **Text that reads at arm's length.** 17px body text, plain sentence-case
-  labels instead of small tracked capitals, mono only for numbers so columns
-  line up. Settings offers three text sizes; every size is in rem, so the
+- **Text that reads at arm's length.** Plus Jakarta Sans at 17px for body text,
+  bold figures with tabular digits so columns line up, plain sentence-case
+  labels instead of small tracked capitals. The code face is kept for codes
+  people type. Settings offers three text sizes; every size is in rem, so the
   root font size scales the whole app. Pinch-zoom is allowed.
-- **Targets for a finger, not a cursor.** Buttons and fields are 56px tall and
+- **A roster that reads like a register.** Column headings (student, attended,
+  status, attendance), an initials avatar for every student so a face is
+  found by colour as well as name, and a status pill in words: on track, close
+  to target, below target.
+- **Targets for a finger, not a cursor.** Buttons and fields are 52px tall and
   rows at least 64px. Every icon has its name beside it, in the navigation and
   on buttons; a bare icon is a guess for anyone who has not learnt it. Sheets
   have a visible close button as well as the drag.
 - **Colour that means what people expect.** Green on target, amber close, red
-  below, always next to words. Orange is the brand and "live", never a verdict.
-- **One layout, three sizes.** A tab bar with labelled icons on a phone; a
-  labelled sidebar and a white frame on the grey page from tablet width, as in
-  a desktop app; two columns where a screen has room. The same links restyle
-  rather than being duplicated.
-- **Headline figures as cards.** A large number and its picture (a segmented
-  meter, a ring) in a recessed area, with an icon and the name of what is
-  counted underneath, so the eye lands on the number and the words confirm it.
+  below, always next to words. Indigo is the brand and "live", never a verdict.
+- **One layout, three sizes.** A tab bar with labelled icons on a phone; the
+  top bar and labelled menu from tablet width; two columns where a screen has
+  room. The same links restyle rather than being duplicated.
+- **Headline figures as cards.** What is counted named first with its icon,
+  then the number large enough to read across a room, then a line of context.
 
 The appearance choice lives in the browser's storage, because it belongs to the
 device rather than the account, and `index.html` applies it before the first

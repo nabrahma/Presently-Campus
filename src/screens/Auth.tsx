@@ -295,12 +295,12 @@ const STEPS = [
 function HowItWorks() {
   return (
     <div className="dot-grid flex h-full flex-col justify-center rounded-[1.75rem] border border-line bg-elevated/60 p-10">
-      <p className="chip w-fit bg-warn-wash text-warn">How it works</p>
+      <p className="chip w-fit bg-accent-wash text-accent">How it works</p>
       <h2 className="title mt-5 text-[1.75rem]">Attendance in one scan</h2>
       <ol className="mt-8 space-y-4">
         {STEPS.map(({ icon: Icon, title, text }, index) => (
           <li key={title} className="panel flex gap-4 p-5">
-            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink text-surface">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-solid text-accent-ink">
               <Icon size={22} strokeWidth={2} />
             </span>
             <span>

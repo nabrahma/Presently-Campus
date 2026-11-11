@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Campus" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="theme-color" content="#f1f1ee" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="color-scheme" content="light dark" />
 
     <meta property="og:type" content="website" />
@@ -47,7 +47,7 @@
         root.setAttribute('data-theme', dark ? 'dark' : 'light')
         root.setAttribute('data-text', saved.text === 'large' || saved.text === 'largest' ? saved.text : 'standard')
         var meta = document.querySelector('meta[name="theme-color"]')
-        if (meta) meta.setAttribute('content', dark ? '#0e0e10' : '#f1f1ee')
+        if (meta) meta.setAttribute('content', dark ? '#141a2d' : '#ffffff')
       })()
     </script>
     <style>
@@ -56,11 +56,11 @@
       body {
         margin: 0;
         height: 100%;
-        background: #f1f1ee;
+        background: #f4f6fb;
       }
       html[data-theme='dark'],
       html[data-theme='dark'] body {
-        background: #0e0e10;
+        background: #0b0f1e;
       }
     </style>
   </head>
