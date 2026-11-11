@@ -31,7 +31,7 @@ createRoot(container).render(
                 background: 'var(--color-surface)',
                 color: 'var(--color-ink)',
                 border: '1px solid var(--color-line)',
-                borderRadius: '1.25rem',
+                borderRadius: '0.875rem',
                 boxShadow: 'var(--shadow-lift)',
                 fontFamily: 'var(--font-sans)',
                 fontSize: '1rem',

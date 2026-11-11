@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { CalendarCheck, CalendarOff, Loader2, QrCode, Radio, ShieldAlert, UserCheck, UserX } from 'lucide-react'
+import { Avatar } from '../../components/Avatar'
 import { BackLink } from '../../components/BackLink'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -283,10 +284,11 @@ function ReportList({
             onClick={() => onPick(row)}
             className="hover-row -mx-2 flex min-h-16 w-[calc(100%+1rem)] items-center gap-3 rounded-xl border-b border-line px-2 py-3 text-left last:border-b-0 active:opacity-70 disabled:active:opacity-100"
           >
+            <Avatar name={row.fullName} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[1.0625rem] font-semibold">{row.fullName}</span>
               <span className="mt-0.5 block truncate text-[0.95rem] text-ink-muted">
-                <span className="font-mono">{row.rollNumber}</span>
+                <span className="tabular-nums">{row.rollNumber}</span>
                 {row.markedAt
                   ? ` · ${row.method === 'qr' ? `Scanned ${formatTime(row.markedAt)}` : `By hand · ${row.reason ?? ''}`}`
                   : ''}
@@ -323,9 +325,9 @@ function FlaggedRow({
     <div className="border-b border-line py-4 last:border-b-0">
       <div className="flex items-baseline gap-3">
         <span className="min-w-0 flex-1 truncate text-[1.125rem] font-semibold">{row.fullName}</span>
-        {row.markedAt ? <span className="font-mono text-[0.95rem] text-ink-muted">{formatTime(row.markedAt)}</span> : null}
+        {row.markedAt ? <span className="tabular-nums text-[0.95rem] text-ink-muted">{formatTime(row.markedAt)}</span> : null}
       </div>
-      <p className="mt-0.5 font-mono text-[0.95rem] text-ink-muted">{row.rollNumber}</p>
+      <p className="mt-0.5 tabular-nums text-[0.95rem] text-ink-muted">{row.rollNumber}</p>
       <ul className="mt-3 space-y-2">
         {row.flags.map((flag) => (
           <li key={flag} className="rounded-xl bg-warn-wash px-3.5 py-2.5 text-[1rem] leading-relaxed text-ink">
@@ -409,7 +411,7 @@ function MarkSheet({
               onClick={() => setStatus(value)}
               className={cn(
                 'min-h-14 rounded-2xl border-2 text-[1.0625rem] font-semibold transition-colors',
-                status === value ? 'border-ink bg-ink text-surface' : 'border-line text-ink-muted hover:border-line-strong'
+                status === value ? 'border-accent-solid bg-accent-solid text-accent-ink' : 'border-line text-ink-muted hover:border-line-strong'
               )}
             >
               {label}

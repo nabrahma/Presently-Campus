@@ -39,14 +39,14 @@ export function marginExplanation(stats: AttendanceStats, target: number, subjec
 }
 
 /** Inline margin for a list row: " · 3 spare" or " · attend next 2". */
-export function MarginNote({ stats }: { stats: AttendanceStats }) {
+export function MarginNote({ stats, separator = ' · ' }: { stats: AttendanceStats; separator?: string }) {
   if (stats.total === 0) return null
   if (stats.bunkable !== null) {
-    return <span className={stats.bunkable > 0 ? 'text-good' : 'text-warn'}>{` · ${stats.bunkable} spare`}</span>
+    return <span className={stats.bunkable > 0 ? 'text-good' : 'text-warn'}>{`${separator}${stats.bunkable} spare`}</span>
   }
   return (
     <span className="text-danger">
-      {stats.comeback === null ? ' · unreachable' : ` · attend next ${stats.comeback}`}
+      {stats.comeback === null ? `${separator}unreachable` : `${separator}attend next ${stats.comeback}`}
     </span>
   )
 }

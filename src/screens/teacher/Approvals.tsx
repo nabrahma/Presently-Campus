@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Clock, ShieldCheck, Smartphone } from 'lucide-react'
+import { Avatar } from '../../components/Avatar'
 import { Booting } from '../../components/Booting'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Empty } from '../../components/Empty'
@@ -146,17 +147,6 @@ export function TeacherApprovals() {
   )
 }
 
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('') || '?'
-  )
-}
-
 function RequestRow({
   request,
   busy,
@@ -171,12 +161,10 @@ function RequestRow({
   return (
     <div className="border-b border-line py-5 last:border-b-0">
       <div className="flex items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent-wash text-[0.95rem] font-semibold text-accent">
-          {initials(request.fullName)}
-        </span>
+        <Avatar name={request.fullName} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[1.125rem] font-semibold">{request.fullName}</span>
-          <span className="block font-mono text-[0.95rem] text-ink-muted">{request.rollNumber}</span>
+          <span className="block tabular-nums text-[0.95rem] text-ink-muted">{request.rollNumber}</span>
         </span>
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">

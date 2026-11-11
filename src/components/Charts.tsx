@@ -76,7 +76,7 @@ export function TrendChart({ points, target }: { points: TrendPoint[]; target: n
             {TICKS.map((tick) => (
               <g key={tick}>
                 <line x1={PAD.left} x2={width - PAD.right} y1={y(tick)} y2={y(tick)} className="stroke-line" strokeWidth={1} />
-                <text x={PAD.left - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-ink-muted font-mono text-[12.5px]">
+                <text x={PAD.left - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-ink-muted tabular-nums text-[12.5px]">
                   {tick}
                 </text>
               </g>
@@ -84,16 +84,16 @@ export function TrendChart({ points, target }: { points: TrendPoint[]; target: n
 
             {/* The target is a reference, not data: a hairline in ink, labelled. */}
             <line x1={PAD.left} x2={width - PAD.right} y1={y(target)} y2={y(target)} className="stroke-ink-muted" strokeWidth={1.5} strokeDasharray="5 4" />
-            <text x={width - PAD.right + 6} y={y(target)} dy="0.32em" className="fill-ink-muted font-mono text-[12.5px]">
+            <text x={width - PAD.right + 6} y={y(target)} dy="0.32em" className="fill-ink-muted tabular-nums text-[12.5px]">
               {target}%
             </text>
 
             {points.length > 1 ? (
               <>
-                <text x={PAD.left} y={HEIGHT - 6} className="fill-ink-muted font-mono text-[12.5px]">
+                <text x={PAD.left} y={HEIGHT - 6} className="fill-ink-muted tabular-nums text-[12.5px]">
                   {formatShortDay(new Date(first).toISOString())}
                 </text>
-                <text x={width - PAD.right} y={HEIGHT - 6} textAnchor="end" className="fill-ink-muted font-mono text-[12.5px]">
+                <text x={width - PAD.right} y={HEIGHT - 6} textAnchor="end" className="fill-ink-muted tabular-nums text-[12.5px]">
                   {formatShortDay(new Date(last).toISOString())}
                 </text>
               </>
@@ -124,7 +124,7 @@ export function TrendChart({ points, target }: { points: TrendPoint[]; target: n
             ))}
 
             {end ? (
-              <text x={x(end.at) + 8} y={y(end.percentage)} dy="-0.6em" className="fill-ink font-mono text-[14px] font-medium">
+              <text x={x(end.at) + 8} y={y(end.percentage)} dy="-0.6em" className="fill-ink tabular-nums text-[14px] font-medium">
                 {Math.round(end.percentage)}%
               </text>
             ) : null}
@@ -147,7 +147,7 @@ export function TrendChart({ points, target }: { points: TrendPoint[]; target: n
 
         {shown ? (
           <div
-            className="pointer-events-none absolute top-0 rounded-xl border border-line bg-surface px-3.5 py-2.5 font-mono text-[0.9rem] text-ink shadow-(--shadow-lift)"
+            className="pointer-events-none absolute top-0 rounded-xl border border-line bg-surface px-3.5 py-2.5 tabular-nums text-[0.9rem] text-ink shadow-(--shadow-lift)"
             style={{ left: Math.min(Math.max(0, x(shown.at) - 70), Math.max(0, width - 150)) }}
           >
             <p className="text-ink-muted">{formatShortDay(new Date(shown.at).toISOString())} · {formatTime(new Date(shown.at).toISOString())}</p>
@@ -159,7 +159,7 @@ export function TrendChart({ points, target }: { points: TrendPoint[]; target: n
       </div>
 
       <TableView>
-        <table className="w-full font-mono text-[0.95rem]">
+        <table className="w-full tabular-nums text-[0.95rem]">
           <thead>
             <tr className="text-left text-ink-muted">
               <th className="py-2.5 font-normal">Class</th>
@@ -219,7 +219,7 @@ export function AbsenceHeatmap({ grid }: { grid: AbsenceGrid }) {
         >
           <span />
           {grid.hours.map((hour) => (
-            <span key={hour} className="pb-1.5 text-center font-mono text-[0.8rem] text-ink-muted">
+            <span key={hour} className="pb-1.5 text-center tabular-nums text-[0.8rem] text-ink-muted">
               {hourLabel(hour)}
             </span>
           ))}
@@ -243,7 +243,7 @@ export function AbsenceHeatmap({ grid }: { grid: AbsenceGrid }) {
       </div>
 
       <TableView>
-        <table className="w-full font-mono text-[0.95rem]">
+        <table className="w-full tabular-nums text-[0.95rem]">
           <thead>
             <tr className="text-left text-ink-muted">
               <th className="py-2.5 font-normal">When</th>
@@ -273,7 +273,7 @@ export function AbsenceHeatmap({ grid }: { grid: AbsenceGrid }) {
 function Row({ weekday, grid, onFocusCell }: { weekday: number; grid: AbsenceGrid; onFocusCell: (cell: GridCell | null) => void }) {
   return (
     <>
-      <span className="flex items-center font-mono text-[0.85rem] text-ink-muted">{WEEKDAYS[weekday]}</span>
+      <span className="flex items-center tabular-nums text-[0.85rem] text-ink-muted">{WEEKDAYS[weekday]}</span>
       {grid.hours.map((hour) => {
         const cell = grid.cells.get(gridKey(weekday, hour))
         if (!cell) return <span key={hour} className="h-12 rounded-[6px] border border-dashed border-line" />
@@ -287,7 +287,7 @@ function Row({ weekday, grid, onFocusCell }: { weekday: number; grid: AbsenceGri
             onPointerLeave={() => onFocusCell(null)}
             onFocus={() => onFocusCell(cell)}
             onBlur={() => onFocusCell(null)}
-            className={cn('h-12 rounded-[6px] font-mono text-[0.875rem] tabular-nums', step.dark ? 'text-bg' : 'text-ink')}
+            className={cn('h-12 rounded-[6px] tabular-nums text-[0.875rem]', step.dark ? 'text-bg' : 'text-ink')}
             style={{ background: step.fill }}
           >
             {Math.round(cell.rate * 100)}

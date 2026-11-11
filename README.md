@@ -2,7 +2,7 @@
 
 Class attendance by QR scan, for teachers and students.
 
-![A teacher's course: roster with each student's standing, and the session list](docs/screenshots/teacher-course.png)
+![The teacher's dashboard: figures across every course, attendance against each target, and what needs attention now](docs/screenshots/teacher-dashboard.png)
 
 A teacher starts a session and projects a QR code that changes every ten
 seconds. Students scan it from the one phone registered to them, and are marked
@@ -61,12 +61,12 @@ Presently app.
 
 <table>
   <tr>
+    <td width="50%"><img src="docs/screenshots/teacher-course.png" alt="A course's roster: each student's attendance, status in words and percentage"></td>
     <td width="50%"><img src="docs/screenshots/teacher-analysis.png" alt="Analysis: students who will fall below the target before a cutoff date"></td>
-    <td width="50%"><img src="docs/screenshots/sign-in.png" alt="Sign in with a college email"></td>
   </tr>
   <tr>
+    <td align="center">A course's roster, read like a register</td>
     <td align="center">Who needs attention before the cutoff</td>
-    <td align="center">Sign in with a college email</td>
   </tr>
 </table>
 

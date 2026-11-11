@@ -16,8 +16,8 @@
     "check:functions": "cd supabase/functions && npx -y deno@2.5.6 check mark-attendance/index.ts register-device/index.ts"
   },
   "dependencies": {
-    "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@radix-ui/react-dialog": "^1.1.23",
     "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/vite": "^4.3.3",

@@ -14,11 +14,21 @@ import { courseLabel } from '../../lib/api'
 import { figuresStats, safetyZone, standings, type AttendanceStats } from '../../lib/attendanceMath'
 import { formatDayMonth, formatTime, formatWeekday, keyToDate } from '../../lib/date'
 import { usePhoneStatus, type PhoneStatus } from '../../lib/devices'
+import { useSession } from '../../lib/session'
 import { openClasses, useStudentData, type OpenClass, type StudentCourse } from '../../lib/student'
 import { useTodayKey } from '../../lib/useTodayKey'
 
+/** "Good morning, Asha": the first name, and the part of the day it is now. */
+function greeting(fullName: string): string {
+  const hour = new Date().getHours()
+  const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const first = fullName.trim().split(/\s+/)[0]
+  return first ? `${part}, ${first}` : part
+}
+
 export function StudentHome() {
   const date = useTodayKey()
+  const { profile } = useSession()
   const { data, error, refresh } = useStudentData()
   const { status: phone } = usePhoneStatus()
 
@@ -44,7 +54,10 @@ export function StudentHome() {
 
   return (
     <>
-      <ScreenHead label={formatWeekday(keyToDate(date))} title={formatDayMonth(keyToDate(date))} />
+      <ScreenHead
+        label={`${formatWeekday(keyToDate(date))}, ${formatDayMonth(keyToDate(date))}`}
+        title={greeting(profile?.fullName ?? '')}
+      />
 
       {phone ? <PhoneWarning status={phone} /> : null}
 
