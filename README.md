@@ -2,7 +2,8 @@
 
 Class attendance by QR scan, for teachers and students.
 
-> **PROJECT REPORT:** [**PROJECT-REPORT/Presently-Campus-Project-Report.pdf**](PROJECT-REPORT/Presently-Campus-Project-Report.pdf)
+> **PROJECT REPORT:** [**PROJECT-REPORT/2023IMG-035_2023IMG-002_Project_Report.pdf**](PROJECT-REPORT/2023IMG-035_2023IMG-002_Project_Report.pdf)<br>
+> **DEMO VIDEO:** [**DEMO-VIDEO/2023IMG-035_2023IMG-002_Demo_Video.mp4**](DEMO-VIDEO/2023IMG-035_2023IMG-002_Demo_Video.mp4) (2 minutes, no sound)<br>
 > (IoTBDM, Semester VII: Abhishek Kokadwar, 2023IMG-002 · Nabaskar Brahma, 2023IMG-035)
 
 ![The teacher's dashboard: figures across every course, attendance against each target, and what needs attention now](docs/screenshots/teacher-dashboard.png)
@@ -184,9 +185,16 @@ supabase/
 ## Project report
 
 The project report submitted for the course is in
-[PROJECT-REPORT/Presently-Campus-Project-Report.pdf](PROJECT-REPORT/Presently-Campus-Project-Report.pdf).
+[PROJECT-REPORT/2023IMG-035_2023IMG-002_Project_Report.pdf](PROJECT-REPORT/2023IMG-035_2023IMG-002_Project_Report.pdf).
 It covers the requirements, the system and anti-proxy design, the database,
 the implementation, testing and the project's limitations.
+
+## Demo video
+
+A two-minute walkthrough of the app, from signing in to marking attendance by
+scan, reviewing flags and reading the analysis, is in
+[DEMO-VIDEO/2023IMG-035_2023IMG-002_Demo_Video.mp4](DEMO-VIDEO/2023IMG-035_2023IMG-002_Demo_Video.mp4).
+It runs the real app on demo data, so the names and accounts in it are made up.
 
 ## Team
 
